@@ -26,11 +26,11 @@ MyNode* initialize_node(MyParticle particle, double bound_min_x, double bound_ma
 
 void free_node(MyNode *node)
 {   
-    free_node(node->nw);
-    free_node(node->ne);
-    free_node(node->sw);
-    free_node(node->se);
-    delete(node);
+    if(node->nw){free_node(node->nw);}
+    if(node->ne){free_node(node->ne);}
+    if(node->sw){free_node(node->sw);}
+    if(node->se){free_node(node->se);}
+    if(node){delete(node);}
 }
 
 void update_child_node(MyNode *node, MyParticle particle, double bound_min_x, double bound_max_x, double bound_min_y, double bound_max_y)
@@ -81,8 +81,7 @@ void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, doub
     {       
         if(y>=bound_min_y && y<=bound_max_y && x>=bound_min_x && x<=bound_max_x)
         {
-            std::cout << "This is the !node branch of the if clauses\n";
-            
+            std::cout << "This is the !node branch of the if clauses\n";      
         }
         else
         {
