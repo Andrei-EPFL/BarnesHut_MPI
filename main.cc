@@ -11,11 +11,11 @@ int main(int argc, char *argv[])
     std::ifstream infile;
     MyNode *root = NULL;
     int MM = atoi(argv[1]);
-    //std::cout<<root->elements;
-    double bound_min_x = 0;
-    double bound_max_x = 128;
-    double bound_min_y = 0;
-    double bound_max_y = 128;
+    //int n = 0;
+    double bound_min_x = 0.;
+    double bound_max_x = 128.;
+    double bound_min_y = 0.;
+    double bound_max_y = 128.;
 
     infile.open("particles.dat", std::ios::in);
     
@@ -32,14 +32,33 @@ int main(int argc, char *argv[])
         add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y);
     }
     infile.close();
-    
+    //n = root->elements;
     std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
     std::cout<<"The particles vector has " << particles.size() << " particles" << std::endl;
     
-    double fx=0, fy=0;
+    double fx = 0., fy = 0.;
+    
+    /*double ax = 0., ay = 0.;
+    float dt = 1.;
+    for(int i = 0; i < n; i++)
+    {
+        compute_force(root, particles[i], &fx, &fy);
+        ax = fx/particles[i].mass;
+        ay = fy/particles[i].mass;
+
+        particles[i].vx = ax * dt;
+        particles[i].vy = ay * dt;
+
+        particles[i].x = particles[i].vx * dt;
+        particles[i].y = particles[i].vy * dt;     
+    }*/
+
     compute_force(root, particles[MM], &fx, &fy);
     std::cout<<fx<<" "<<fy<<std::endl;
-    
+    std::cout<<root->nw->elements;
+    std::cout<<root->se->elements;
+    std::cout<<root->ne->elements;
+    std::cout<<root->ne->ne->elements;    
     std::cout<<"end of program"<< std::endl;
     return 0;
 }

@@ -5,8 +5,8 @@
 int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy)
 {
     const float theta = 0.5;
-    const double G = 6.672e-11;
-
+    //const double G = 6.672e-11;
+    const double G = 1;
     if(!node) {std::cout<<"There is no node, so Bye Bye\n"; return 0;}
     *fx = *fy = 0;
     // Compute the distance between the COM of the node and the particle
@@ -21,7 +21,8 @@ int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy)
 
     /*If the ratio below is smaller than theta, the node is far away such that it can be treated
     as a particle with totalmass at position COM_x and COM_y. Thus the computation of the force can be done*/
-    if(quadrant_avg_size/distance <= theta)
+    std::cout<<quadrant_avg_size/distance<<std::endl;
+    if(quadrant_avg_size/distance < theta)
     {
         double distance3 = std::pow(distance, 3);
         *fx = G * particle.mass * node->totalmass * (node->COM_x - particle.x)/distance3;
@@ -40,21 +41,21 @@ int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy)
        child_fx = 0; child_fy = 0;
         if (node->ne)
         {
-            compute_force(node->nw, particle, &child_fx, &child_fy);
+            compute_force(node->ne, particle, &child_fx, &child_fy);
             *fx += child_fx;
             *fy += child_fy;
         }
         child_fx = 0; child_fy = 0;
         if (node->sw)
         {
-            compute_force(node->nw, particle, &child_fx, &child_fy);
+            compute_force(node->sw, particle, &child_fx, &child_fy);
             *fx += child_fx;
             *fy += child_fy;
         }
         child_fx = 0; child_fy = 0;
         if (node->se)
         {
-            compute_force(node->nw, particle, &child_fx, &child_fy);
+            compute_force(node->se, particle, &child_fx, &child_fy);
             *fx += child_fx;
             *fy += child_fy;
         }
