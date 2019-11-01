@@ -85,7 +85,7 @@ void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, doub
         }
         else
         {
-            std::cout << "The particle is placed outside the boundaries\n";
+            std::cout << "The particle is placed outside the boundaries(Node\n";
         }
     }
     else
