@@ -1,0 +1,11 @@
+#!/bin/bash -l
+#SBATCH -N 1
+#SBATCH -n 10
+#SBATCH -c 1
+#SBATCH --time 00:05:00
+#SBATCH -A phys-743
+#SBATCH --reservation phys-743-course
+module purge
+module load gcc mvapich2
+
+srun ./main
