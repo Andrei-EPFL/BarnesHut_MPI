@@ -55,7 +55,7 @@ def main():
         ax.set_zlabel("z")
         ax.view_init(30, 0.5*i)
        
-        plt.pause(0.0001)
+        plt.pause(0.01)
         plt.cla()
 
 if __name__== '__main__':

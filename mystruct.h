@@ -5,6 +5,7 @@ struct MyParticle
 {
     double x, y, z, vx, vy, vz;
     double mass;
+    bool outside;
 };
 
 struct MyNode

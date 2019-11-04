@@ -116,13 +116,10 @@ void update_current_node(MyNode *node, MyParticle particle)
 
 void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, double bound_max_x, double bound_min_y, double bound_max_y, double bound_min_z, double bound_max_z)
 {
-    double x = newparticle.x;
-    double y = newparticle.y;
-    double z = newparticle.z;
     
     if(!node)
     {       
-        if(y>=bound_min_y && y<=bound_max_y && x>=bound_min_x && x<=bound_max_x && z>=bound_min_z && z<=bound_max_z)
+        if(newparticle.outside == false)
         {
             std::cout << "This is the !node branch of the if clauses\n";      
         }
@@ -134,7 +131,7 @@ void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, doub
     else
     {
         //std::cout<<"This is the other branch of the if clause\n";
-        if(y>=bound_min_y && y<=bound_max_y && x>=bound_min_x && x<=bound_max_x&& z>=bound_min_z && z<=bound_max_z)
+        if(newparticle.outside == false)
         {
             if(node->elements == 1)
             {
@@ -155,7 +152,8 @@ void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, doub
         }
         else
         {
-            std::cout << "The particle is placed outside the boundaries\n";
+            //std::cout << "The particle is placed outside the boundaries\n";
+            //std::cout <<newparticle.outside<<std::endl;
         }
     }
 }
