@@ -4,9 +4,10 @@
 
 int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy)
 {
-    const float theta = 0.;
-    const double G = 6.672e-11;
-    //const double G = 1;
+    const float theta = 0.5;
+    //const double G = 6.672e-11; //m, kg, s
+    const double G = 4.49e-11;//kpc, Msun, MegaYear
+    const float epsilon = 0.01; //kpc
     if(!node) {std::cout<<"There is no node, so Bye Bye\n"; return 0;}
     *fx = *fy = 0;
     // Compute the distance between the COM of the node and the particle
@@ -19,6 +20,7 @@ int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy)
     double quadrant_avg_size = ((node->bound_max_x-node->bound_min_x) + 
 		                (node->bound_max_y-node->bound_min_y)) / 2.;
 
+    distance = std::sqrt(std::pow(distance,2) + std::pow(epsilon,2));
     /*If the ratio below is smaller than theta, the node is far away such that it can be treated
     as a particle with totalmass at position COM_x and COM_y. Thus the computation of the force can be done*/
     if(node->elements == 1)
