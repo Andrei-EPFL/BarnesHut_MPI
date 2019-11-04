@@ -1,0 +1,10 @@
+1
+1
+998
+The first creation of the tree took 0.00956268 seconds
+The root node has 1000 elements
+The particles vector has 1000 particles
+The remaining number of particles in the particles vector is= 1000
+The number of particles in the tree is= 989
+The large loop with steps takes 7.83398 seconds using 16 threads
+End of program

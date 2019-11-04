@@ -1,0 +1,13 @@
+#!/bin/bash -l
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 16
+#SBATCH --time 00:05:00
+#SBATCH -J disjoint 	# Name of the job
+#SBATCH -p p4		# Partition
+
+
+export OMP_NUM_THREADS=1
+
+
+./main

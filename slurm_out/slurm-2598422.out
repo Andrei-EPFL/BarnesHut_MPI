@@ -1,0 +1,12 @@
+1
+1
+998
+The first creation of the tree took 0.00880873 seconds
+The root node has 1000 elements
+The particles vector has 1000 particles
+The remaining number of particles in the particles vector is= 1000
+The number of particles in the tree is= 989
+The large loop with steps takes 23.3789 seconds using 2 threads
+The average time to compute forces for all particles in one step is 0.0197745 seconds
+The average time to empty and refill the root node is 0.00357715 seconds
+End of program
