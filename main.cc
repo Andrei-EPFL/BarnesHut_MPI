@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <cmath>
 #include <chrono>
 #include "update_node.h"
@@ -49,6 +50,33 @@ int main()
         particles.push_back(tmpparticle);
         add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
     }
+    
+    int blk_length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address[9];
+    MPI_Get_address(&tmpparticle, &address[0]);
+    MPI_Get_address(&tmpparticle.x, &address[1]);
+    MPI_Get_address(&tmpparticle.y, &address[2]);
+    MPI_Get_address(&tmpparticle.z, &address[3]);
+    MPI_Get_address(&tmpparticle.vx, &address[4]);
+    MPI_Get_address(&tmpparticle.vy, &address[5]);
+    MPI_Get_address(&tmpparticle.vz, &address[6]);
+    MPI_Get_address(&tmpparticle.mass, &address[7]);
+    MPI_Get_address(&tmpparticle.outside, &address[8]);
+
+    MPI_Aint displs[8];
+    displs[0] = MPI_Aint_diff(address[1], address[0]);
+    displs[1] = MPI_Aint_diff(address[2], address[0]);
+    displs[2] = MPI_Aint_diff(address[3], address[0]);
+    displs[3] = MPI_Aint_diff(address[4], address[0]);
+    displs[4] = MPI_Aint_diff(address[5], address[0]);
+    displs[5] = MPI_Aint_diff(address[6], address[0]);
+    displs[6] = MPI_Aint_diff(address[7], address[0]);
+    displs[7] = MPI_Aint_diff(address[8], address[0]);
+    
+    MPI_Datatype types[8] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_LOGICAL};
+    MPI_Datatype MyParticle_mpi_t;
+    MPI_Type_create_struct(8, blk_length, displs, types, &MyParticle_mpi_t);
+    MPI_Type_commit(&MyParticle_mpi_t);
 
     if(root->nwf){std::cout<<root->nwf->elements<<std::endl;}
     if(root->nef){std::cout<<root->nef->elements<<std::endl;}
@@ -62,22 +90,35 @@ int main()
     infile.close();
     auto t1 = clk::now();
     n = root->elements;
+    std::vector<MyParticle> particles_out(n);
+
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
     std::cout<<"The particles vector has " << particles.size() << " particles" << std::endl;
     
     //Declaration of variables for the actual computation
-    //double fx = 0., fy = 0., fz = 0;
-    //double ax = 0., ay = 0., az = 0;
-    //float dt = 0.1;
+    double fx = 0., fy = 0., fz = 0;
+    double ax = 0., ay = 0., az = 0;
+    float dt = 0.1;
+
+    auto ln = n/psize + (prank < n % psize ? 1 : 0);
+    auto i_start = prank * ln + (prank < n % psize ? 0 : n % psize);
+    auto i_end = i_start + ln;
+    std::array<int, 10> recvcounts;
+    std::array<int, 10> displs_data;
+    for(int c = 0; c<psize; c++)
+    {
+        recvcounts[c] = n/psize + (c < n % psize ? 1 : 0);
+        displs[c] = c * ln + (c < n % psize ? 0 : n % psize);
+    }
     
     //Computation of new positions
-    /*ofile.open("./output/diskout.txt", std::ios::out);
-    for(int step = 0; step<1000; step++)
+    if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
+    for(int step = 0; step<10; step++)
     {
         fx = fy = fz = 0.;
       
-        for(int i = 0; i < n; i++)
+        for(int i = i_start; i < i_end; i++)
         {
             if(particles[i].outside == false)
             {
@@ -85,8 +126,6 @@ int main()
                 ax = fx/particles[i].mass;
                 ay = fy/particles[i].mass;
                 az = fz/particles[i].mass;
-                
-                
                 
                 particles[i].vx += ax * dt;
                 particles[i].vy += ay * dt;
@@ -96,14 +135,6 @@ int main()
                 particles[i].y += particles[i].vy * dt;
                 particles[i].z += particles[i].vz * dt;
 
-            
-                //This is allows a particle to go out of the boundary, by returning it on the other side of the box.
-                //if(particles[i].x < bound_min_x){particles[i].x = bound_max_x - (bound_min_x - particles[i].x);}
-                //if(particles[i].y < bound_min_y){particles[i].y = bound_max_y - (bound_min_y - particles[i].y);}
-                //if(particles[i].x > bound_max_x){particles[i].x = bound_min_x + (particles[i].x - bound_max_x);}
-                //if(particles[i].y > bound_max_y){particles[i].y = bound_min_y + (particles[i].y - bound_max_y);}
-                //if(particles[i].z > bound_max_z){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].z < bound_min_z){particles.erase(particles.begin()+i); n--;i--;}
                 if(particles[i].x < bound_min_x || particles[i].y < bound_min_y || particles[i].x > bound_max_x || particles[i].y > bound_max_y || particles[i].z > bound_max_z || particles[i].z < bound_min_z)
                 {
                     particles[i].x = bound_min_x - 100; 
@@ -112,19 +143,12 @@ int main()
                     particles[i].vx = particles[i].vy = particles[i].vz = particles[i].mass = 0;
                     particles[i].outside = true;
                 }
-
-                //if(particles[i].x < bound_min_x){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].z < bound_min_z){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].y < bound_min_y){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].x > bound_max_x){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].z > bound_max_z){particles.erase(particles.begin()+i); n--;i--;}
-                //if(particles[i].y > bound_max_y){particles.erase(particles.begin()+i); n--;i--;}
-
             }
             fx = fy = fz = 0.;
-            ofile<<particles[i].x<<" "<<particles[i].y<<" "<<particles[i].z<<std::endl;
+            MPI_Gatherv(&particles[i_start], ln, MyParticle_mpi_t, &particles_out, &recvcounts[0], &displs_data[0], MyParticle_mpi_t, 0, MPI_COMM_WORLD );
+            if(prank==0){ofile<<particles[i].x<<" "<<particles[i].y<<" "<<particles[i].z<<std::endl;}
         }
-        ofile<<step<<std::endl;
+        if(prank==0){ofile<<step<<std::endl;}
         free_node(root);
         root = NULL;
         root = initialize_node(particles[0], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
@@ -133,11 +157,11 @@ int main()
             add_particle(root, particles[p], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
         }
     }
-    ofile.close();*/
+    if(prank==0){ofile.close();}
     second elapsed = clk::now() - t0;
     std::cout<<"The remaining number of particles in the particles vector is= "<<n <<std::endl;
     std::cout<<"The number of particles in the tree is= "<<root->elements <<std::endl;
-    std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds"<<std::endl;
+    std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"End of program"<< std::endl;
     MPI_Finalize();
     return 0;
