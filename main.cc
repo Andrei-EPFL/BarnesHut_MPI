@@ -10,14 +10,14 @@ using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
-//#include <mpi.h>
+#include <mpi.h>
 
 int main()
 {
-    //MPI_Init();
-    //int prank, psize;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &prank);
-    //MPI_Comm_size(MPI_COMM_WORLD, &psize);
+    MPI_Init(NULL, NULL);
+    int prank, psize;
+    MPI_Comm_rank(MPI_COMM_WORLD, &prank);
+    MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
     //Declartion of variables
     std::ifstream infile;
@@ -62,17 +62,17 @@ int main()
     infile.close();
     auto t1 = clk::now();
     n = root->elements;
-    std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
+    std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
     std::cout<<"The particles vector has " << particles.size() << " particles" << std::endl;
     
     //Declaration of variables for the actual computation
-    double fx = 0., fy = 0., fz = 0;
-    double ax = 0., ay = 0., az = 0;
-    float dt = 0.1;
+    //double fx = 0., fy = 0., fz = 0;
+    //double ax = 0., ay = 0., az = 0;
+    //float dt = 0.1;
     
     //Computation of new positions
-    ofile.open("./output/diskout.txt", std::ios::out);
+    /*ofile.open("./output/diskout.txt", std::ios::out);
     for(int step = 0; step<1000; step++)
     {
         fx = fy = fz = 0.;
@@ -98,12 +98,12 @@ int main()
 
             
                 //This is allows a particle to go out of the boundary, by returning it on the other side of the box.
-                /*if(particles[i].x < bound_min_x){particles[i].x = bound_max_x - (bound_min_x - particles[i].x);}
-                if(particles[i].y < bound_min_y){particles[i].y = bound_max_y - (bound_min_y - particles[i].y);}
-                if(particles[i].x > bound_max_x){particles[i].x = bound_min_x + (particles[i].x - bound_max_x);}
-                if(particles[i].y > bound_max_y){particles[i].y = bound_min_y + (particles[i].y - bound_max_y);}
-                if(particles[i].z > bound_max_z){particles.erase(particles.begin()+i); n--;i--;}
-                if(particles[i].z < bound_min_z){particles.erase(particles.begin()+i); n--;i--;}*/
+                //if(particles[i].x < bound_min_x){particles[i].x = bound_max_x - (bound_min_x - particles[i].x);}
+                //if(particles[i].y < bound_min_y){particles[i].y = bound_max_y - (bound_min_y - particles[i].y);}
+                //if(particles[i].x > bound_max_x){particles[i].x = bound_min_x + (particles[i].x - bound_max_x);}
+                //if(particles[i].y > bound_max_y){particles[i].y = bound_min_y + (particles[i].y - bound_max_y);}
+                //if(particles[i].z > bound_max_z){particles.erase(particles.begin()+i); n--;i--;}
+                //if(particles[i].z < bound_min_z){particles.erase(particles.begin()+i); n--;i--;}
                 if(particles[i].x < bound_min_x || particles[i].y < bound_min_y || particles[i].x > bound_max_x || particles[i].y > bound_max_y || particles[i].z > bound_max_z || particles[i].z < bound_min_z)
                 {
                     particles[i].x = bound_min_x - 100; 
@@ -133,13 +133,13 @@ int main()
             add_particle(root, particles[p], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
         }
     }
+    ofile.close();*/
     second elapsed = clk::now() - t0;
-    ofile.close();
     std::cout<<"The remaining number of particles in the particles vector is= "<<n <<std::endl;
     std::cout<<"The number of particles in the tree is= "<<root->elements <<std::endl;
     std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds"<<std::endl;
     std::cout<<"End of program"<< std::endl;
-    //MPI_Finalize();
+    MPI_Finalize();
     return 0;
 }
 
