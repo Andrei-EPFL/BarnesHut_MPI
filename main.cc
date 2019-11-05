@@ -6,13 +6,13 @@
 #include <chrono>
 #include "update_node.h"
 #include "dynamics.h"
+#include "node_func.h"
 
 using clk = std::chrono::high_resolution_clock;
 using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
 #include <mpi.h>
-
 int main()
 {
     MPI_Init(NULL, NULL);
@@ -37,7 +37,7 @@ int main()
     MyParticle tmpparticle;
     
     auto t0 = clk::now();
-    infile.open("./input/disk.txt", std::ios::in);
+    infile.open("./input/particles.dat", std::ios::in);
     //Initialisation of the root node
     infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
     tmpparticle.outside = false;
@@ -95,8 +95,27 @@ int main()
     std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
     std::cout<<"The particles vector has " << particles_v.size() << " particles" << std::endl;
     
+    std::vector<MyNode_val> serializedNode;
+    serialize(root, serializedNode);
+    MyNode *test_root = NULL;
+    std::cout<<"The test_root " << test_root << " elements" << std::endl;
+    
+    std::cout<<"The serializedNode vector has " << serializedNode.size() << " elements" << std::endl;
+    deSerialize(test_root, serializedNode);
+    
+    std::cout<<"The real_root " << root->elements << " elements" << std::endl;
+    std::cout<<"The sw real_root " << root->swb->swb->nef->nef->elements << " elements" << std::endl;
+    std::cout<<"The sw real_root " << root->swb->swb->nef->nef->neb->seb->COM_x << " elements" << std::endl;
+    
+
+    std::cout<<"The test_root " << test_root ->elements<< " elements" << std::endl;
+    std::cout<<"The sw test_root " << test_root->swb->swb->nef->nef->elements << " elements" << std::endl;
+    std::cout<<"The sw test_root " << test_root->swb->swb->nef->nef->neb->seb->COM_x << " elements" << std::endl;
+    
+
+
     //Declaration of variables for the actual computation
-    double fx = 0., fy = 0., fz = 0;
+    /*double fx = 0., fy = 0., fz = 0;
     double ax = 0., ay = 0., az = 0;
     float dt = 0.1;
 
@@ -174,7 +193,7 @@ int main()
         if(prank==0){ofile<<step<<std::endl;}
         
     }
-    if(prank==0){ofile.close();}
+    if(prank==0){ofile.close();}*/
     second elapsed = clk::now() - t0;
     std::cout<<"The remaining number of particles in the particles vector is= "<<n <<std::endl;
     std::cout<<"The number of particles in the tree is= "<<root->elements <<std::endl;

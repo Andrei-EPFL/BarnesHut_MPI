@@ -4,7 +4,7 @@ LD=${CXX}
 CXXFLAGS+=-Wall -Wextra -Werror  -std=c++11 $(OPTIM)
 LDFLAGS+=-lm $(CXXFLAGS)
 
-OBJS=main.o update_node.o dynamics.o
+OBJS=main.o update_node.o dynamics.o node_func.o
 
 all: main
 

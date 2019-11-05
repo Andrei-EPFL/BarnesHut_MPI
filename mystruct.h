@@ -27,4 +27,22 @@ struct MyNode
     MyNode *nwb, *neb, *swb, *seb;
 };
 
+struct MyNode_val
+{
+    int elements;
+    double totalmass, COM_x, COM_y, COM_z, COM_vx, COM_vy, COM_vz;
+    
+    double bound_min_x;
+    double bound_max_x;
+    
+    double bound_min_y;
+    double bound_max_y;
+
+    double bound_min_z;
+    double bound_max_z;
+
+
+    bool nwf, nef, swf, sef;
+    bool nwb, neb, swb, seb;
+};
 #endif
