@@ -33,7 +33,7 @@ int main()
     double bound_min_z = 0.;
     double bound_max_z = 500;
 
-    std::vector<MyParticle> particles;
+    std::vector<MyParticle> particles_v;
     MyParticle tmpparticle;
     
     auto t0 = clk::now();
@@ -42,12 +42,12 @@ int main()
     infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
     tmpparticle.outside = false;
     root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
-    particles.push_back(tmpparticle);
+    particles_v.push_back(tmpparticle);
     while(infile>>tmpparticle.x)
     {
         infile>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
         tmpparticle.outside = false;
-        particles.push_back(tmpparticle);
+        particles_v.push_back(tmpparticle);
         add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
     }
     
@@ -90,11 +90,10 @@ int main()
     infile.close();
     auto t1 = clk::now();
     n = root->elements;
-    std::vector<MyParticle> particles_out(n);
-
+    
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
-    std::cout<<"The particles vector has " << particles.size() << " particles" << std::endl;
+    std::cout<<"The particles vector has " << particles_v.size() << " particles" << std::endl;
     
     //Declaration of variables for the actual computation
     double fx = 0., fy = 0., fz = 0;
@@ -104,17 +103,28 @@ int main()
     auto ln = n/psize + (prank < n % psize ? 1 : 0);
     auto i_start = prank * ln + (prank < n % psize ? 0 : n % psize);
     auto i_end = i_start + ln;
-    std::array<int, 10> recvcounts;
-    std::array<int, 10> displs_data;
+    int recvcounts[psize];
+    int displs_data[psize];
+    MyParticle particles[n], particles_out[n];
+    
+    for(int aux = 0; aux < n; aux ++)
+    {
+        particles[aux] = particles_v[aux];
+    }
+    
     for(int c = 0; c<psize; c++)
     {
         recvcounts[c] = n/psize + (c < n % psize ? 1 : 0);
-        displs[c] = c * ln + (c < n % psize ? 0 : n % psize);
+        displs_data[c] = c * recvcounts[c] + (c < n % psize ? 0 : n % psize);
+        if(prank==0)
+        {
+            std::cout<<recvcounts[c]<< " " << displs_data[c]<<std::endl;
+        }  
     }
     
     //Computation of new positions
     if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
-    for(int step = 0; step<10; step++)
+    for(int step = 0; step<1000; step++)
     {
         fx = fy = fz = 0.;
       
@@ -145,17 +155,24 @@ int main()
                 }
             }
             fx = fy = fz = 0.;
-            MPI_Gatherv(&particles[i_start], ln, MyParticle_mpi_t, &particles_out, &recvcounts[0], &displs_data[0], MyParticle_mpi_t, 0, MPI_COMM_WORLD );
-            if(prank==0){ofile<<particles[i].x<<" "<<particles[i].y<<" "<<particles[i].z<<std::endl;}
         }
-        if(prank==0){ofile<<step<<std::endl;}
+        MPI_Gatherv(particles+i_start, ln, MyParticle_mpi_t, particles_out, recvcounts, displs_data, MyParticle_mpi_t, 0, MPI_COMM_WORLD );
+        
+        for (int aux = 0; aux < n; aux++){particles[aux]=particles_out[aux];}
+        
+        MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+        
         free_node(root);
         root = NULL;
+        if(prank==0){ofile<<particles[0].x<<" "<<particles[0].y<<" "<<particles[0].z<<std::endl;}    
         root = initialize_node(particles[0], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
         for(int p = 1; p < n; p++)
-        {        
+        {    
+            if(prank==0){ofile<<particles[p].x<<" "<<particles[p].y<<" "<<particles[p].z<<std::endl;}    
             add_particle(root, particles[p], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
         }
+        if(prank==0){ofile<<step<<std::endl;}
+        
     }
     if(prank==0){ofile.close();}
     second elapsed = clk::now() - t0;
