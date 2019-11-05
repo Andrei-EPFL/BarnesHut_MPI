@@ -20,11 +20,7 @@ int main()
     MPI_Comm_rank(MPI_COMM_WORLD, &prank);
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
-    //Declartion of variables
-    std::ifstream infile;
-    std::ofstream ofile;
-    MyNode *root = NULL;
-    
+    //Declartion (and initialization) of some variables
     int n = 0;
     double bound_min_x = 0.;
     double bound_max_x = 500;
@@ -32,25 +28,16 @@ int main()
     double bound_max_y = 500;
     double bound_min_z = 0.;
     double bound_max_z = 500;
-
+    
+    std::ofstream ofile;
+    MyNode *root = NULL;
+    
     std::vector<MyParticle> particles_v;
     MyParticle tmpparticle;
-    
-    auto t0 = clk::now();
-    infile.open("./input/particles.dat", std::ios::in);
-    //Initialisation of the root node
-    infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
+    tmpparticle.x = tmpparticle.y = tmpparticle.z = tmpparticle.vx = tmpparticle.vy = tmpparticle.vz = tmpparticle.mass = 0.;
     tmpparticle.outside = false;
-    root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
-    particles_v.push_back(tmpparticle);
-    while(infile>>tmpparticle.x)
-    {
-        infile>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
-        tmpparticle.outside = false;
-        particles_v.push_back(tmpparticle);
-        add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
-    }
     
+    //Creation of a new MPI data type related to the MyParticle struct
     int blk_length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     MPI_Aint address[9];
     MPI_Get_address(&tmpparticle, &address[0]);
@@ -78,41 +65,39 @@ int main()
     MPI_Type_create_struct(8, blk_length, displs, types, &MyParticle_mpi_t);
     MPI_Type_commit(&MyParticle_mpi_t);
 
-    if(root->nwf){std::cout<<root->nwf->elements<<std::endl;}
-    if(root->nef){std::cout<<root->nef->elements<<std::endl;}
-    if(root->swf){std::cout<<root->swf->elements<<std::endl;}
-    if(root->sef){std::cout<<root->sef->elements<<std::endl;}
-    if(root->nwb){std::cout<<root->nwb->elements<<std::endl;}
-    if(root->neb){std::cout<<root->neb->elements<<std::endl;}
-    if(root->swb){std::cout<<root->swb->elements<<std::endl;}
-    if(root->seb){std::cout<<root->seb->elements<<std::endl;}
-
-    infile.close();
+    auto t0 = clk::now();
+    if(prank == 0)
+    {
+        std::ifstream infile;
+        infile.open("./input/disk.txt", std::ios::in);
+        //Initialisation of the root node
+        infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
+        tmpparticle.outside = false;
+        root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
+        particles_v.push_back(tmpparticle);
+        while(infile>>tmpparticle.x)
+        {
+            infile>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
+            tmpparticle.outside = false;
+            particles_v.push_back(tmpparticle);
+            add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
+        }
+        infile.close();
+    }
     auto t1 = clk::now();
     n = root->elements;
     
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The root node has "<<root->elements << " elements"<<std::endl;
-    std::cout<<"The particles vector has " << particles_v.size() << " particles" << std::endl;
+    std::cout<<"The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<"The particles vector has " << particles_v.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
     
     std::vector<MyNode_val> serializedNode;
     serialize(root, serializedNode);
     MyNode *test_root = NULL;
-    std::cout<<"The test_root " << test_root << " elements" << std::endl;
-    
-    std::cout<<"The serializedNode vector has " << serializedNode.size() << " elements" << std::endl;
     deSerialize(test_root, serializedNode);
     
-    std::cout<<"The real_root " << root->elements << " elements" << std::endl;
-    std::cout<<"The sw real_root " << root->swb->swb->nef->nef->elements << " elements" << std::endl;
-    std::cout<<"The sw real_root " << root->swb->swb->nef->nef->neb->seb->COM_x << " elements" << std::endl;
-    
-
-    std::cout<<"The test_root " << test_root ->elements<< " elements" << std::endl;
-    std::cout<<"The sw test_root " << test_root->swb->swb->nef->nef->elements << " elements" << std::endl;
-    std::cout<<"The sw test_root " << test_root->swb->swb->nef->nef->neb->seb->COM_x << " elements" << std::endl;
-    
-
+    int k = 4;
+    std::cout<<"There are "<<numNodesHeightK(root, k)<<" nodes at depth "<<k<<std::endl;
 
     //Declaration of variables for the actual computation
     /*double fx = 0., fy = 0., fz = 0;
@@ -195,8 +180,8 @@ int main()
     }
     if(prank==0){ofile.close();}*/
     second elapsed = clk::now() - t0;
-    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<std::endl;
-    std::cout<<"The number of particles in the tree is= "<<root->elements <<std::endl;
+    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<"for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"End of program"<< std::endl;
     MPI_Finalize();

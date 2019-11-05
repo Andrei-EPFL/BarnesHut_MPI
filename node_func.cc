@@ -39,26 +39,27 @@ MyNode_val transfer_info(MyNode *node)
 }
 
 
-void serialize(MyNode *node, std::vector<MyNode_val> &vect) 
+void serialize(MyNode *node, std::vector<MyNode_val> &vect, int depth) 
 { 
     if (node == NULL) 
     { 
         std::cout<<"There is no root node\n"; 
     }     
-    
-    MyNode_val local_node_val;
-    local_node_val = transfer_info(node);
-    vect.push_back(local_node_val);
+    else
+    { 
+        MyNode_val local_node_val;
+        local_node_val = transfer_info(node);
+        vect.push_back(local_node_val);
 
-    if(node->nwf) {serialize(node->nwf, vect);} 
-    if(node->nef) {serialize(node->nef, vect);}
-    if(node->swf) {serialize(node->swf, vect);} 
-    if(node->sef) {serialize(node->sef, vect);} 
-    if(node->nwb) {serialize(node->nwb, vect);} 
-    if(node->neb) {serialize(node->neb, vect);}
-    if(node->swb) {serialize(node->swb, vect);} 
-    if(node->seb) {serialize(node->seb, vect);} 
-    
+        if(node->nwf) {serialize(node->nwf, vect);} 
+        if(node->nef) {serialize(node->nef, vect);}
+        if(node->swf) {serialize(node->swf, vect);} 
+        if(node->sef) {serialize(node->sef, vect);} 
+        if(node->nwb) {serialize(node->nwb, vect);} 
+        if(node->neb) {serialize(node->neb, vect);}
+        if(node->swb) {serialize(node->swb, vect);} 
+        if(node->seb) {serialize(node->seb, vect);} 
+    }    
 }
   
 
@@ -124,3 +125,12 @@ void deSerialize(MyNode *&node, std::vector<MyNode_val> &vect)
         if(local_node_val.seb) {deSerialize(node->seb, vect);} 
     }
 } 
+
+
+int numNodesHeightK(MyNode *root, int k)
+{
+    if(root == NULL) return 0; //if the tree is empty return 0
+    if(k == 0) return 1; //if k = 0, then the root is the only node to return 
+
+    return numNodesHeightK(root->nwf, k-1) + numNodesHeightK(root->nef, k-1) + numNodesHeightK(root->swf, k-1) + numNodesHeightK(root->sef, k-1)+ numNodesHeightK(root->nwb, k-1) + numNodesHeightK(root->neb, k-1) + numNodesHeightK(root->swb, k-1) + numNodesHeightK(root->seb, k-1);
+}

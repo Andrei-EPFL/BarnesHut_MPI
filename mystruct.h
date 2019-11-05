@@ -22,7 +22,6 @@ struct MyNode
     double bound_min_z;
     double bound_max_z;
 
-
     MyNode *nwf, *nef, *swf, *sef;
     MyNode *nwb, *neb, *swb, *seb;
 };
@@ -40,7 +39,6 @@ struct MyNode_val
 
     double bound_min_z;
     double bound_max_z;
-
 
     bool nwf, nef, swf, sef;
     bool nwb, neb, swb, seb;
