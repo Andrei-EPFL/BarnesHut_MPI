@@ -36,8 +36,8 @@ int main()
     
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //Creation of a new MPI data type related to the MyParticle struct
-    int blk_length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint address[9];
+    int blk_length[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address[10];
     MPI_Get_address(&tmpparticle[0], &address[0]);
     MPI_Get_address(&tmpparticle[0].x, &address[1]);
     MPI_Get_address(&tmpparticle[0].y, &address[2]);
@@ -46,20 +46,21 @@ int main()
     MPI_Get_address(&tmpparticle[0].vy, &address[5]);
     MPI_Get_address(&tmpparticle[0].vz, &address[6]);
     MPI_Get_address(&tmpparticle[0].mass, &address[7]);
-    MPI_Get_address(&tmpparticle[0].outside, &address[8]);
+    MPI_Get_address(&tmpparticle[0].node_index, &address[8]);
+    MPI_Get_address(&tmpparticle[0].outside, &address[9]);
 
-    MPI_Aint displs[8];
-    for(int add = 0; add<8; add++)
+    MPI_Aint displs[9];
+    for(int add = 0; add<9; add++)
     {
         displs[add] = MPI_Aint_diff(address[add+1], address[0]);    
     }
     
-    MPI_Datatype types[8] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+    MPI_Datatype types[9] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                             MPI_DOUBLE, MPI_CXX_BOOL};
+                             MPI_DOUBLE, MPI_INT, MPI_CXX_BOOL};
 
     MPI_Datatype MyParticle_mpi_temp_t;
-    MPI_Type_create_struct(8, blk_length, displs, types, &MyParticle_mpi_temp_t);
+    MPI_Type_create_struct(9, blk_length, displs, types, &MyParticle_mpi_temp_t);
     MPI_Datatype MyParticle_mpi_t;
 
     MPI_Aint extent, address_second;
@@ -123,8 +124,10 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<MyNode_val> serializedNode_v;    
+    std::vector<MyNode_val> serializedNode_v;
+    std::vector<MyParticle> particles_v;
     auto t0 = clk::now();
+
     if(prank == 0)
     {
         std::ifstream infile;
@@ -140,6 +143,7 @@ int main()
         //Initialisation of the root node
         infile>>particle_local.x>>particle_local.y>>particle_local.z>>particle_local.vx>>particle_local.vy>>particle_local.vz>>particle_local.mass;
         particle_local.outside = false;
+        particle_local.node_index = -1;
         root_local = initialize_node(particle_local, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index_local);
         particles_v_local.push_back(particle_local);
         
@@ -154,20 +158,22 @@ int main()
         //
         infile.close();
         
+        serialize(root_local, serializedNode_v, depth_local);
+        n_serializednode = serializedNode_v.size();
+        
+        free_node(root_local);
+        root_local = NULL;
+        
+        flagParticlesToNode(root_local, depth_local, particles_v_local);
+        //MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+
         std::cout<<"\n\nThe final number of nodes in the root tree (the whole tree) is "<<index_local<<std::endl;
         std::cout<<"The root node has "<<root_local->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
         std::cout<<"The particles vector has " << particles_v_local.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl; 
-        
-        std::cout<<"There are "<<numNodesHeightK(root_local, depth_local)<<" nodes at depth "<<depth_local<<std::endl;
-    
-        serialize(root_local, serializedNode_v, depth_local+1);
-        free_node(root_local);
-        n_serializednode = serializedNode_v.size();
-
-        std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;
- 
-        //MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);     
+        std::cout<<"There are "<<numNodesHeightK(root_local, depth_local)<<" nodes at depth "<<depth_local<<std::endl;        
+        std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;     
     }
+
     auto t1 = clk::now();
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
 
@@ -176,13 +182,14 @@ int main()
         serializedNode_v.resize(n_serializednode);
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
-
+    
     std::cout<<"The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
-    std::cout<<"The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-       
+    std::cout<<"The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
+    
     deSerialize(root, serializedNode_v);
     std::cout<<"The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
+    /*DEBUG temp. do not keep for long
     std::cout<<"The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The root has nwb " << root->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     if(root->swb->nwb) {std::cout<<"The root has swbnwb " << root->swb->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
@@ -192,7 +199,7 @@ int main()
     if(root->swb->seb) {std::cout<<"The root has swbseb " << root->swb->seb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
     if(root->neb) {std::cout<<"The root has neb " << root->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
     if(root->swb->nwf) {std::cout<<"The root has swbnwf " << root->swb->nwf->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    
+    */
 
     /*
     //n = root->elements;

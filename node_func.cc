@@ -64,6 +64,12 @@ void serialize(MyNode *node, std::vector<MyNode_val> &vect, int depth)
             if(node->swb) {serialize(node->swb, vect, depth-1);} 
             if(node->seb) {serialize(node->seb, vect, depth-1);} 
         }
+        else if(depth == 0)
+        {
+            MyNode_val local_node_val;
+            local_node_val = transfer_info(node);
+            vect.push_back(local_node_val);
+        }
     }    
 }
   
@@ -146,4 +152,32 @@ int numNodesHeightK(MyNode *root, int k)
         return 1; //if k = 0, then the root is the only node to return 
     }
     return numNodesHeightK(root->nwf, k-1) + numNodesHeightK(root->nef, k-1) + numNodesHeightK(root->swf, k-1) + numNodesHeightK(root->sef, k-1)+ numNodesHeightK(root->nwb, k-1) + numNodesHeightK(root->neb, k-1) + numNodesHeightK(root->swb, k-1) + numNodesHeightK(root->seb, k-1);
+}
+
+void flagParticlesToNode(MyNode *root, int k, std::vector<MyParticle> &particles)
+{
+    if(root != NULL)
+    {   
+        if(k == 0)
+        {
+            for(unsigned i = 0; i < particles.size(); i++)
+            {
+                if(particles[i].x <= root->bound_max_x && particles[i].x > root->bound_min_x && 
+                   particles[i].y <= root->bound_max_y && particles[i].y > root->bound_min_y &&
+                   particles[i].z <  root->bound_max_y && particles[i].z >= root->bound_min_y)
+                   {particles[i].node_index = root->index;}               
+            }
+        }
+        else
+        {
+            flagParticlesToNode(root->nwf, k-1, particles);
+            flagParticlesToNode(root->nef, k-1, particles);
+            flagParticlesToNode(root->swf, k-1, particles);
+            flagParticlesToNode(root->sef, k-1, particles);
+            flagParticlesToNode(root->nwb, k-1, particles);
+            flagParticlesToNode(root->neb, k-1, particles);
+            flagParticlesToNode(root->swb, k-1, particles);
+            flagParticlesToNode(root->seb, k-1, particles);
+        }
+    }
 }
