@@ -8,6 +8,7 @@ MyNode* initialize_node(MyParticle particle, double bound_min_x, double bound_ma
     node->index = *index;
     *index = *index + 1;
     node->depthflag = 0;
+    node->proc_rank = -1;
     node->totalmass = particle.mass;
     node->COM_x = particle.x;
     node->COM_y = particle.y;
@@ -60,43 +61,51 @@ void update_child_node(MyNode *node, MyParticle particle, double bound_min_x, do
     double y_center = (bound_min_y + bound_max_y)/2.;
     double z_center = (bound_min_z + bound_max_z)/2.;
     //Behind
-    if(x<=x_center && y>y_center && z<z_center)
+    if(x<=x_center && y>y_center && z<z_center &&
+    x>bound_min_x && y<=bound_max_y && z>=bound_min_z)
     {
         if(node->nwb) {add_particle(node->nwb, particle, bound_min_x, x_center, y_center, bound_max_y, bound_min_z, z_center, index);}
         else {node->nwb = initialize_node(particle, bound_min_x, x_center, y_center, bound_max_y,bound_min_z, z_center, index);}
     }
-    if(x<=x_center && y<=y_center&& z<z_center) 
+    if(x<=x_center && y<=y_center&& z<z_center
+    &&x>bound_min_x && y>bound_min_y && z>=bound_min_z) 
     {
         if(node->swb) {add_particle(node->swb, particle, bound_min_x, x_center, bound_min_y, y_center, bound_min_z, z_center, index );}
         else {node->swb = initialize_node(particle, bound_min_x, x_center, bound_min_y, y_center, bound_min_z, z_center, index);}
     }
-    if(x>x_center && y>y_center&& z<z_center)
+    if(x>x_center && y>y_center&& z<z_center
+    && x<=bound_max_x && y<=bound_max_y && z>=bound_min_z)
     {
         if(node->neb) {add_particle(node->neb, particle, x_center, bound_max_x, y_center, bound_max_y, bound_min_z, z_center, index);}
         else {node->neb = initialize_node(particle, x_center, bound_max_x, y_center, bound_max_y, bound_min_z, z_center, index);}
     }
-    if(x>x_center && y<=y_center&& z<z_center) 
+    if(x>x_center && y<=y_center&& z<z_center&&
+    x<=bound_max_x && y>bound_min_y && z>=bound_min_z) 
     {
         if(node->seb) {add_particle(node->seb, particle, x_center, bound_max_x, bound_min_y, y_center, bound_min_z, z_center, index );}
         else {node->seb = initialize_node(particle, x_center, bound_max_x, bound_min_y, y_center, bound_min_z, z_center, index );}
     }
     //Front
-    if(x<=x_center && y>y_center && z>=z_center)
+    if(x<=x_center && y>y_center && z>=z_center&&
+    x>bound_min_x && y<=bound_max_y && z<bound_max_z)
     {
         if(node->nwf) {add_particle(node->nwf, particle, bound_min_x, x_center, y_center, bound_max_y, z_center, bound_max_z, index);}
         else {node->nwf = initialize_node(particle, bound_min_x, x_center, y_center, bound_max_y, z_center, bound_max_z, index);}
     }
-    if(x<=x_center && y<=y_center&& z>=z_center) 
+    if(x<=x_center && y<=y_center&& z>=z_center
+    &&x>bound_min_x && y>bound_min_y && z<bound_max_z) 
     {
         if(node->swf) {add_particle(node->swf, particle, bound_min_x, x_center, bound_min_y, y_center, z_center, bound_max_z, index );}
         else {node->swf = initialize_node(particle, bound_min_x, x_center, bound_min_y, y_center, z_center, bound_max_z, index);}
     }
-    if(x>x_center && y>y_center&& z>=z_center)
+    if(x>x_center && y>y_center&& z>=z_center
+    &&x<=bound_max_x && y<=bound_max_y && z<bound_max_z)
     {
         if(node->nef) {add_particle(node->nef, particle, x_center, bound_max_x, y_center, bound_max_y, z_center, bound_max_z, index);}
         else {node->nef = initialize_node(particle, x_center, bound_max_x, y_center, bound_max_y, z_center, bound_max_z, index);}
     }
-    if(x>x_center && y<=y_center&& z>=z_center) 
+    if(x>x_center && y<=y_center&& z>=z_center
+    &&x<=bound_max_x && y>bound_min_y && z<bound_max_z) 
     {
         if(node->sef) {add_particle(node->sef, particle, x_center, bound_max_x, bound_min_y, y_center, z_center, bound_max_z, index );}
         else {node->sef = initialize_node(particle, x_center, bound_max_x, bound_min_y, y_center, z_center, bound_max_z, index );}

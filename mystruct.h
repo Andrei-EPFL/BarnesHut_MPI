@@ -6,6 +6,7 @@ struct MyParticle
     double x, y, z, vx, vy, vz;
     double mass;
     int node_index;
+    int proc_rank;
     bool outside;
 };
 
@@ -14,6 +15,7 @@ struct MyNode
     int elements;
     int index;
     int depthflag;
+    int proc_rank;
     double totalmass, COM_x, COM_y, COM_z, COM_vx, COM_vy, COM_vz;
     
     double bound_min_x;
@@ -34,6 +36,7 @@ struct MyNode_val
     int elements;
     int index;
     int depthflag;
+    int proc_rank;
     double totalmass, COM_x, COM_y, COM_z, COM_vx, COM_vy, COM_vz;
     
     double bound_min_x;

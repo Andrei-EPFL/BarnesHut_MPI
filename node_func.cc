@@ -9,6 +9,7 @@ MyNode_val transfer_info(MyNode *node)
     local_node_val.elements = node->elements;
     local_node_val.index = node->index;
     local_node_val.depthflag = node->depthflag;
+    local_node_val.proc_rank = node->proc_rank;
     local_node_val.totalmass = node->totalmass;
     
     local_node_val.COM_x = node->COM_x;
@@ -82,6 +83,8 @@ MyNode* newNode(MyNode_val local_node_val)
     node->elements = local_node_val.elements;
     node->index = local_node_val.index;
     node->depthflag = local_node_val.depthflag;
+    node->proc_rank = local_node_val.proc_rank;
+    
     node->totalmass = local_node_val.totalmass;
 
     node->COM_x = local_node_val.COM_x;
@@ -142,42 +145,101 @@ void deSerialize(MyNode *&node, std::vector<MyNode_val> &vect)
     }
 } 
 
-
-int numNodesHeightK(MyNode *root, int k)
+int numNodesHeightK(MyNode *root, int k, int *n)
 {
     if(root == NULL) return 0; //if the tree is empty return 0
     if(k == 0)
     {
         root->depthflag=1;
+        *n = *n+ root->elements;
         return 1; //if k = 0, then the root is the only node to return 
     }
-    return numNodesHeightK(root->nwf, k-1) + numNodesHeightK(root->nef, k-1) + numNodesHeightK(root->swf, k-1) + numNodesHeightK(root->sef, k-1)+ numNodesHeightK(root->nwb, k-1) + numNodesHeightK(root->neb, k-1) + numNodesHeightK(root->swb, k-1) + numNodesHeightK(root->seb, k-1);
+    return numNodesHeightK(root->nwf, k-1, n) + numNodesHeightK(root->nef, k-1, n) + numNodesHeightK(root->swf, k-1, n) + numNodesHeightK(root->sef, k-1, n)+ numNodesHeightK(root->nwb, k-1, n) + numNodesHeightK(root->neb, k-1, n) + numNodesHeightK(root->swb, k-1, n) + numNodesHeightK(root->seb, k-1, n);
 }
 
-void flagParticlesToNode(MyNode *root, int k, std::vector<MyParticle> &particles)
-{
-    if(root != NULL)
+void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes)
+{   
+    if(root == NULL){std::cout<<"There is no root node\n";}
+    else
     {   
         if(k == 0)
         {
-            for(unsigned i = 0; i < particles.size(); i++)
-            {
-                if(particles[i].x <= root->bound_max_x && particles[i].x > root->bound_min_x && 
-                   particles[i].y <= root->bound_max_y && particles[i].y > root->bound_min_y &&
-                   particles[i].z <  root->bound_max_y && particles[i].z >= root->bound_min_y)
-                   {particles[i].node_index = root->index;}               
-            }
+            *n_nodes = *n_nodes + 1;           
         }
         else
         {
-            flagParticlesToNode(root->nwf, k-1, particles);
-            flagParticlesToNode(root->nef, k-1, particles);
-            flagParticlesToNode(root->swf, k-1, particles);
-            flagParticlesToNode(root->sef, k-1, particles);
-            flagParticlesToNode(root->nwb, k-1, particles);
-            flagParticlesToNode(root->neb, k-1, particles);
-            flagParticlesToNode(root->swb, k-1, particles);
-            flagParticlesToNode(root->seb, k-1, particles);
+            if(root->nwf){numNodeDepthKandLeaves(root->nwf, k-1, n_nodes);}
+            if(root->nef){numNodeDepthKandLeaves(root->nef, k-1, n_nodes);}
+            if(root->swf){numNodeDepthKandLeaves(root->swf, k-1, n_nodes);}
+            if(root->sef){numNodeDepthKandLeaves(root->sef, k-1, n_nodes);}
+            if(root->nwb){numNodeDepthKandLeaves(root->nwb, k-1, n_nodes);}
+            if(root->neb){numNodeDepthKandLeaves(root->neb, k-1, n_nodes);}
+            if(root->swb){numNodeDepthKandLeaves(root->swb, k-1, n_nodes);}
+            if(root->seb){numNodeDepthKandLeaves(root->seb, k-1, n_nodes);}
+            if(root->nwf == NULL && root->nef == NULL && root->swf ==NULL && root->sef == NULL && root->nwb == NULL && root->neb == NULL && root->swb ==NULL && root->seb == NULL)
+            {
+                *n_nodes = *n_nodes + 1;
+            }
         }
     }
+}
+
+void linkParticlesNodepRank(MyNode *root, int k, std::vector<MyParticle> &particles, int p, int *ln, unsigned int *n_nodes)
+{   
+    if(root == NULL){std::cout<<"There is no root node\n";}
+    else
+    {
+        if(*ln > 0 && root->proc_rank<0)
+        {   
+            if(k == 0)
+            {
+                root->proc_rank = p;
+                *ln = *ln - 1;
+                *n_nodes = *n_nodes + root->elements;
+                for(unsigned i = 0; i < particles.size(); i++)
+                {
+                    if(particles[i].x <= root->bound_max_x && particles[i].x > root->bound_min_x && 
+                    particles[i].y <= root->bound_max_y && particles[i].y > root->bound_min_y &&
+                    particles[i].z <  root->bound_max_z && particles[i].z >= root->bound_min_z)
+                        {
+                            particles[i].proc_rank = p;
+                            particles[i].node_index = root->index;            
+                        }               
+                }
+                
+            }
+            else
+            {
+                if(root->nwf){linkParticlesNodepRank(root->nwf, k-1, particles, p, ln, n_nodes);}
+                if(root->nef){linkParticlesNodepRank(root->nef, k-1, particles, p, ln, n_nodes);}
+                if(root->swf){linkParticlesNodepRank(root->swf, k-1, particles, p, ln, n_nodes);}
+                if(root->sef){linkParticlesNodepRank(root->sef, k-1, particles, p, ln, n_nodes);}
+                if(root->nwb){linkParticlesNodepRank(root->nwb, k-1, particles, p, ln, n_nodes);}
+                if(root->neb){linkParticlesNodepRank(root->neb, k-1, particles, p, ln, n_nodes);}
+                if(root->swb){linkParticlesNodepRank(root->swb, k-1, particles, p, ln, n_nodes);}
+                if(root->seb){linkParticlesNodepRank(root->seb, k-1, particles, p, ln, n_nodes);}
+                if(root->nwf == NULL && root->nef == NULL && root->swf ==NULL && root->sef == NULL && root->nwb == NULL && root->neb == NULL && root->swb ==NULL && root->seb == NULL)
+                {
+                    root->proc_rank = p;
+                    *ln = *ln - 1;
+                    *n_nodes = *n_nodes + root->elements;
+                    for(unsigned i = 0; i < particles.size(); i++)
+                    {
+                        if(particles[i].x <= root->bound_max_x && particles[i].x > root->bound_min_x && 
+                        particles[i].y <= root->bound_max_y && particles[i].y > root->bound_min_y &&
+                        particles[i].z <  root->bound_max_z && particles[i].z >= root->bound_min_z)
+                            {
+                                particles[i].proc_rank = p;
+                                particles[i].node_index = root->index;            
+                            }               
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool compareByprank(const MyParticle &a, const MyParticle &b)
+{
+    return a.proc_rank < b.proc_rank;
 }

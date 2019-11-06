@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <cmath>
+#include <algorithm>
 #include <chrono>
 #include "update_node.h"
 #include "dynamics.h"
@@ -36,8 +37,8 @@ int main()
     
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //Creation of a new MPI data type related to the MyParticle struct
-    int blk_length[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint address[10];
+    int blk_length[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address[11];
     MPI_Get_address(&tmpparticle[0], &address[0]);
     MPI_Get_address(&tmpparticle[0].x, &address[1]);
     MPI_Get_address(&tmpparticle[0].y, &address[2]);
@@ -47,20 +48,21 @@ int main()
     MPI_Get_address(&tmpparticle[0].vz, &address[6]);
     MPI_Get_address(&tmpparticle[0].mass, &address[7]);
     MPI_Get_address(&tmpparticle[0].node_index, &address[8]);
-    MPI_Get_address(&tmpparticle[0].outside, &address[9]);
+    MPI_Get_address(&tmpparticle[0].proc_rank, &address[9]);
+    MPI_Get_address(&tmpparticle[0].outside, &address[10]);
 
-    MPI_Aint displs[9];
-    for(int add = 0; add<9; add++)
+    MPI_Aint displs[10];
+    for(int add = 0; add<10; add++)
     {
         displs[add] = MPI_Aint_diff(address[add+1], address[0]);    
     }
     
-    MPI_Datatype types[9] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+    MPI_Datatype types[10] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                             MPI_DOUBLE, MPI_INT, MPI_CXX_BOOL};
+                             MPI_DOUBLE, MPI_INT, MPI_INT, MPI_CXX_BOOL};
 
     MPI_Datatype MyParticle_mpi_temp_t;
-    MPI_Type_create_struct(9, blk_length, displs, types, &MyParticle_mpi_temp_t);
+    MPI_Type_create_struct(10, blk_length, displs, types, &MyParticle_mpi_temp_t);
     MPI_Datatype MyParticle_mpi_t;
 
     MPI_Aint extent, address_second;
@@ -70,41 +72,42 @@ int main()
     MPI_Type_commit(&MyParticle_mpi_t);
 
     //Creation of a new MPI data type related to MyNode_val struct;
-    int blk_length_node[24] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint address_node[25];
+    int blk_length_node[25] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address_node[26];
     MPI_Get_address(&tmpnodeval[0], &address_node[0]);
     MPI_Get_address(&tmpnodeval[0].elements, &address_node[1]);
     MPI_Get_address(&tmpnodeval[0].index, &address_node[2]);
     MPI_Get_address(&tmpnodeval[0].depthflag, &address_node[3]);
-    MPI_Get_address(&tmpnodeval[0].totalmass, &address_node[4]);
-    MPI_Get_address(&tmpnodeval[0].COM_x, &address_node[5]);
-    MPI_Get_address(&tmpnodeval[0].COM_y, &address_node[6]);
-    MPI_Get_address(&tmpnodeval[0].COM_z, &address_node[7]);
-    MPI_Get_address(&tmpnodeval[0].COM_vx, &address_node[8]);
-    MPI_Get_address(&tmpnodeval[0].COM_vy, &address_node[9]);
-    MPI_Get_address(&tmpnodeval[0].COM_vz, &address_node[10]);
-    MPI_Get_address(&tmpnodeval[0].bound_min_x, &address_node[11]);
-    MPI_Get_address(&tmpnodeval[0].bound_max_x, &address_node[12]);
-    MPI_Get_address(&tmpnodeval[0].bound_min_y, &address_node[13]);
-    MPI_Get_address(&tmpnodeval[0].bound_max_y, &address_node[14]);
-    MPI_Get_address(&tmpnodeval[0].bound_min_z, &address_node[15]);
-    MPI_Get_address(&tmpnodeval[0].bound_max_z, &address_node[16]);
-    MPI_Get_address(&tmpnodeval[0].nwf, &address_node[17]);
-    MPI_Get_address(&tmpnodeval[0].nef, &address_node[18]);
-    MPI_Get_address(&tmpnodeval[0].swf, &address_node[19]);
-    MPI_Get_address(&tmpnodeval[0].sef, &address_node[20]);
-    MPI_Get_address(&tmpnodeval[0].nwb, &address_node[21]);
-    MPI_Get_address(&tmpnodeval[0].neb, &address_node[22]);
-    MPI_Get_address(&tmpnodeval[0].swb, &address_node[23]);
-    MPI_Get_address(&tmpnodeval[0].seb, &address_node[24]);
+    MPI_Get_address(&tmpnodeval[0].proc_rank, &address_node[4]);
+    MPI_Get_address(&tmpnodeval[0].totalmass, &address_node[5]);
+    MPI_Get_address(&tmpnodeval[0].COM_x, &address_node[6]);
+    MPI_Get_address(&tmpnodeval[0].COM_y, &address_node[7]);
+    MPI_Get_address(&tmpnodeval[0].COM_z, &address_node[8]);
+    MPI_Get_address(&tmpnodeval[0].COM_vx, &address_node[9]);
+    MPI_Get_address(&tmpnodeval[0].COM_vy, &address_node[10]);
+    MPI_Get_address(&tmpnodeval[0].COM_vz, &address_node[11]);
+    MPI_Get_address(&tmpnodeval[0].bound_min_x, &address_node[12]);
+    MPI_Get_address(&tmpnodeval[0].bound_max_x, &address_node[13]);
+    MPI_Get_address(&tmpnodeval[0].bound_min_y, &address_node[14]);
+    MPI_Get_address(&tmpnodeval[0].bound_max_y, &address_node[15]);
+    MPI_Get_address(&tmpnodeval[0].bound_min_z, &address_node[16]);
+    MPI_Get_address(&tmpnodeval[0].bound_max_z, &address_node[17]);
+    MPI_Get_address(&tmpnodeval[0].nwf, &address_node[18]);
+    MPI_Get_address(&tmpnodeval[0].nef, &address_node[19]);
+    MPI_Get_address(&tmpnodeval[0].swf, &address_node[20]);
+    MPI_Get_address(&tmpnodeval[0].sef, &address_node[21]);
+    MPI_Get_address(&tmpnodeval[0].nwb, &address_node[22]);
+    MPI_Get_address(&tmpnodeval[0].neb, &address_node[23]);
+    MPI_Get_address(&tmpnodeval[0].swb, &address_node[24]);
+    MPI_Get_address(&tmpnodeval[0].seb, &address_node[25]);
     
-    MPI_Aint displs_node[24];
-    for(int add = 0; add<24; add++)
+    MPI_Aint displs_node[25];
+    for(int add = 0; add<25; add++)
     {
         displs_node[add] = MPI_Aint_diff(address_node[add+1], address_node[0]);    
     }
     
-    MPI_Datatype types_node[24] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, 
+    MPI_Datatype types_node[25] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, 
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -134,44 +137,68 @@ int main()
         std::ofstream ofile;
         int index_local = 0;
         int depth_local = 4;
+        int ln_local = 0;
+        int n_nodes_depth_k_leaves = 0;
+        
         MyParticle particle_local;
-
         std::vector<MyParticle> particles_v_local;
         MyNode *root_local = NULL;
     
         infile.open("./input/disk.txt", std::ios::in);
         //Initialisation of the root node
         infile>>particle_local.x>>particle_local.y>>particle_local.z>>particle_local.vx>>particle_local.vy>>particle_local.vz>>particle_local.mass;
-        particle_local.outside = false;
-        particle_local.node_index = -1;
+        particle_local.outside = false; particle_local.node_index = -1; particle_local.proc_rank = -1;
         root_local = initialize_node(particle_local, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index_local);
         particles_v_local.push_back(particle_local);
         
         while(infile>>particle_local.x)
         {
             infile>>particle_local.y>>particle_local.z>>particle_local.vx>>particle_local.vy>>particle_local.vz>>particle_local.mass;
-            particle_local.outside = false;
-
             particles_v_local.push_back(particle_local);
             add_particle(root_local, particle_local, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index_local);
         }
         //
         infile.close();
         
+        numNodeDepthKandLeaves(root_local, depth_local, &n_nodes_depth_k_leaves);
         serialize(root_local, serializedNode_v, depth_local);
         n_serializednode = serializedNode_v.size();
         
-        free_node(root_local);
-        root_local = NULL;
+        //THIS PSIZE HAS TO BE DELETED; IT IS USED FOR DEBUG ONLY;
+        psize = 10;
+        unsigned int n_tmp_part_debug = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            ln_local = n_nodes_depth_k_leaves/psize + (p < n_nodes_depth_k_leaves % psize ? 1 : 0);
+            linkParticlesNodepRank(root_local, depth_local, particles_v_local, p, &ln_local, &n_tmp_part_debug);
+            std::cout<<n_tmp_part_debug<<" ";
+        }
+
+        std::cout<<"\n\n\n";
+        if(n_tmp_part_debug != particles_v_local.size()) {std::cout<<"There is an issue with the repartization of nodes (and particles) to process\n";}
+
+        for(unsigned part = 0; part < particles_v_local.size(); part++)
+        {
+            std::cout<<particles_v_local[part].proc_rank<<" ";
+        }
         
-        flagParticlesToNode(root_local, depth_local, particles_v_local);
+        std::sort(particles_v_local.begin(), particles_v_local.end(), compareByprank);
+        
+        std::cout<<"\n\n\n";
+        for(unsigned part = 0; part < particles_v_local.size(); part++)
+        {
+            std::cout<<particles_v_local[part].proc_rank<<" ";
+        }
         //MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
         std::cout<<"\n\nThe final number of nodes in the root tree (the whole tree) is "<<index_local<<std::endl;
         std::cout<<"The root node has "<<root_local->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
         std::cout<<"The particles vector has " << particles_v_local.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl; 
-        std::cout<<"There are "<<numNodesHeightK(root_local, depth_local)<<" nodes at depth "<<depth_local<<std::endl;        
+        std::cout<<"There are "<<n_nodes_depth_k_leaves<<" nodes and leaves at depth "<<depth_local<<std::endl;        
         std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;     
+        
+        free_node(root_local);
+        root_local = NULL;
     }
 
     auto t1 = clk::now();
@@ -189,8 +216,8 @@ int main()
     deSerialize(root, serializedNode_v);
     std::cout<<"The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
-    /*DEBUG temp. do not keep for long
-    std::cout<<"The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    //DEBUG temp. do not keep for long
+    /*std::cout<<"The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The root has nwb " << root->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     if(root->swb->nwb) {std::cout<<"The root has swbnwb " << root->swb->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
     if(root->swb->nef) {std::cout<<"The root has swbnef " << root->swb->nef->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
