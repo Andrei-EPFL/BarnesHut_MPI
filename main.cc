@@ -21,22 +21,19 @@ int main()
     MPI_Comm_size(MPI_COMM_WORLD, &psize);
 
     //Declartion (and initialization) of some variables
-    int n = 0;
+    //MyNode *root = NULL;
+    //int n = 0;
+    
     double bound_min_x = 0.;
     double bound_max_x = 500;
     double bound_min_y = 0.;
     double bound_max_y = 500;
     double bound_min_z = 0.;
-    double bound_max_z = 500;
-    
-    std::ofstream ofile;
-    MyNode *root = NULL;
-    
+    double bound_max_z = 500; 
     MyNode_val tmpnodeval = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
-
-    std::vector<MyParticle> particles_v;
     MyParticle tmpparticle = {0, 0, 0, 0, 0, 0, 0, 0};
-    
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     //Creation of a new MPI data type related to the MyParticle struct
     int blk_length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     MPI_Aint address[9];
@@ -56,13 +53,14 @@ int main()
         displs[add] = MPI_Aint_diff(address[add+1], address[0]);    
     }
     
-    MPI_Datatype types[8] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_LOGICAL};
+    MPI_Datatype types[8] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                             MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
+                             MPI_DOUBLE, MPI_LOGICAL};
     MPI_Datatype MyParticle_mpi_t;
     MPI_Type_create_struct(8, blk_length, displs, types, &MyParticle_mpi_t);
     MPI_Type_commit(&MyParticle_mpi_t);
 
     //Creation of a new MPI data type related to MyNode_val struct;
-
     int blk_length_node[24] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
     MPI_Aint address_node[25];
     MPI_Get_address(&tmpnodeval, &address_node[0]);
@@ -91,7 +89,6 @@ int main()
     MPI_Get_address(&tmpnodeval.swb, &address_node[23]);
     MPI_Get_address(&tmpnodeval.seb, &address_node[24]);
     
-
     MPI_Aint displs_node[24];
     for(int add = 0; add<24; add++)
     {
@@ -109,33 +106,53 @@ int main()
     MPI_Datatype MyNode_val_mpi_t;
     MPI_Type_create_struct(24, blk_length_node, displs_node, types_node, &MyNode_val_mpi_t);
     MPI_Type_commit(&MyNode_val_mpi_t);
-
-
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    
     auto t0 = clk::now();
     if(prank == 0)
     {
         std::ifstream infile;
+        std::ofstream ofile;
         int index = 0;
+        int n_local = 0;
+        std::vector<MyParticle> particles_v;
+        MyNode *root_local = NULL;
+    
         infile.open("./input/disk.txt", std::ios::in);
         //Initialisation of the root node
         infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
         tmpparticle.outside = false;
-        root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
+        root_local = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
         particles_v.push_back(tmpparticle);
+        
         while(infile>>tmpparticle.x)
         {
             infile>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
             tmpparticle.outside = false;
+
             particles_v.push_back(tmpparticle);
-            add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
+            add_particle(root_local, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
         }
         infile.close();
+        
+        n_local = particles_v.size();
+        MyParticle particles_local[n_local];
+        for(int aux = 0; aux < n_local; aux ++)
+        {
+            particles_local[aux] = particles_v[aux];
+        }
+
         std::cout<<"The final number of nodes in the root tree (the whole tree) is "<<index<<std::endl;
+        std::cout<<"The root node has "<<root_local->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+        std::cout<<"The particles vector has " << particles_v.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;  
     }
     auto t1 = clk::now();
-    n = root->elements;
-    
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
+    
+    
+    /*
+    //n = root->elements;
     std::cout<<"The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The particles vector has " << particles_v.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
     
@@ -176,7 +193,7 @@ int main()
     
 
     //////////////////
-    
+    */
 
     //Declaration of variables for the actual computation
     /*double fx = 0., fy = 0., fz = 0;
@@ -258,13 +275,15 @@ int main()
         
     }
     if(prank==0){ofile.close();}*/
+
     second elapsed = clk::now() - t0;
-    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<"for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
+//    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<"for process "<<prank<<" from the total of "<<psize<<std::endl;
+//    std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"End of program"<< std::endl;
 
     MPI_Type_free(&MyParticle_mpi_t);
+    MPI_Type_free(&MyNode_val_mpi_t);
     MPI_Finalize();
     return 0;
 }
