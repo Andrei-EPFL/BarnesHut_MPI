@@ -65,24 +65,30 @@ int main()
     MPI_Type_create_struct(8, blk_length, displs, types, &MyParticle_mpi_t);
     MPI_Type_commit(&MyParticle_mpi_t);
 
+    //Creation of a new MPI data type related to MyNode_val struct;
+
+
+
     auto t0 = clk::now();
     if(prank == 0)
     {
         std::ifstream infile;
+        int index = 0;
         infile.open("./input/disk.txt", std::ios::in);
         //Initialisation of the root node
         infile>>tmpparticle.x>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
         tmpparticle.outside = false;
-        root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
+        root = initialize_node(tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
         particles_v.push_back(tmpparticle);
         while(infile>>tmpparticle.x)
         {
             infile>>tmpparticle.y>>tmpparticle.z>>tmpparticle.vx>>tmpparticle.vy>>tmpparticle.vz>>tmpparticle.mass;
             tmpparticle.outside = false;
             particles_v.push_back(tmpparticle);
-            add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
+            add_particle(root, tmpparticle, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index);
         }
         infile.close();
+        std::cout<<"The final number of nodes in the root tree (the whole tree) is "<<index<<std::endl;
     }
     auto t1 = clk::now();
     n = root->elements;
@@ -91,13 +97,44 @@ int main()
     std::cout<<"The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The particles vector has " << particles_v.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
     
+
+
+    /////Tests/////
+    int depth = 5;
+
+    std::cout<<"There are "<<numNodesHeightK(root, depth)<<" nodes at depth "<<depth<<std::endl;
+    
     std::vector<MyNode_val> serializedNode;
-    serialize(root, serializedNode);
+    serialize(root, serializedNode, depth+1);
+    std::cout<<"The serialized node vector has " << serializedNode.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[0].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[1].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[2].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[3].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[5].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[30].index <<std::endl;
+    
     MyNode *test_root = NULL;
     deSerialize(test_root, serializedNode);
+
+    std::cout<<"There are "<<root->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->swb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(root, 4)<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(root, 5)<<" nodes at depth "<<depth<<std::endl;
     
-    int k = 4;
-    std::cout<<"There are "<<numNodesHeightK(root, k)<<" nodes at depth "<<k<<std::endl;
+
+    std::cout<<"There are "<<test_root->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->swb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(test_root, 4)<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(test_root, 5)<<" nodes at depth "<<depth<<std::endl;
+    
+
+    //////////////////
+    
 
     //Declaration of variables for the actual computation
     /*double fx = 0., fy = 0., fz = 0;
@@ -184,6 +221,8 @@ int main()
     std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<"End of program"<< std::endl;
+
+    MPI_Type_free(&MyParticle_mpi_t);
     MPI_Finalize();
     return 0;
 }

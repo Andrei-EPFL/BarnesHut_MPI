@@ -11,6 +11,8 @@ struct MyParticle
 struct MyNode
 {
     int elements;
+    int index;
+    int depthflag;
     double totalmass, COM_x, COM_y, COM_z, COM_vx, COM_vy, COM_vz;
     
     double bound_min_x;
@@ -29,6 +31,8 @@ struct MyNode
 struct MyNode_val
 {
     int elements;
+    int index;
+    int depthflag;
     double totalmass, COM_x, COM_y, COM_z, COM_vx, COM_vy, COM_vz;
     
     double bound_min_x;
