@@ -32,10 +32,10 @@ int main()
     std::ofstream ofile;
     MyNode *root = NULL;
     
+    MyNode_val tmpnodeval = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
+
     std::vector<MyParticle> particles_v;
-    MyParticle tmpparticle;
-    tmpparticle.x = tmpparticle.y = tmpparticle.z = tmpparticle.vx = tmpparticle.vy = tmpparticle.vz = tmpparticle.mass = 0.;
-    tmpparticle.outside = false;
+    MyParticle tmpparticle = {0, 0, 0, 0, 0, 0, 0, 0};
     
     //Creation of a new MPI data type related to the MyParticle struct
     int blk_length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
@@ -51,14 +51,10 @@ int main()
     MPI_Get_address(&tmpparticle.outside, &address[8]);
 
     MPI_Aint displs[8];
-    displs[0] = MPI_Aint_diff(address[1], address[0]);
-    displs[1] = MPI_Aint_diff(address[2], address[0]);
-    displs[2] = MPI_Aint_diff(address[3], address[0]);
-    displs[3] = MPI_Aint_diff(address[4], address[0]);
-    displs[4] = MPI_Aint_diff(address[5], address[0]);
-    displs[5] = MPI_Aint_diff(address[6], address[0]);
-    displs[6] = MPI_Aint_diff(address[7], address[0]);
-    displs[7] = MPI_Aint_diff(address[8], address[0]);
+    for(int add = 0; add<8; add++)
+    {
+        displs[add] = MPI_Aint_diff(address[add+1], address[0]);    
+    }
     
     MPI_Datatype types[8] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_LOGICAL};
     MPI_Datatype MyParticle_mpi_t;
@@ -67,6 +63,52 @@ int main()
 
     //Creation of a new MPI data type related to MyNode_val struct;
 
+    int blk_length_node[24] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address_node[25];
+    MPI_Get_address(&tmpnodeval, &address_node[0]);
+    MPI_Get_address(&tmpnodeval.elements, &address_node[1]);
+    MPI_Get_address(&tmpnodeval.index, &address_node[2]);
+    MPI_Get_address(&tmpnodeval.depthflag, &address_node[3]);
+    MPI_Get_address(&tmpnodeval.totalmass, &address_node[4]);
+    MPI_Get_address(&tmpnodeval.COM_x, &address_node[5]);
+    MPI_Get_address(&tmpnodeval.COM_y, &address_node[6]);
+    MPI_Get_address(&tmpnodeval.COM_z, &address_node[7]);
+    MPI_Get_address(&tmpnodeval.COM_vx, &address_node[8]);
+    MPI_Get_address(&tmpnodeval.COM_vy, &address_node[9]);
+    MPI_Get_address(&tmpnodeval.COM_vz, &address_node[10]);
+    MPI_Get_address(&tmpnodeval.bound_min_x, &address_node[11]);
+    MPI_Get_address(&tmpnodeval.bound_max_x, &address_node[12]);
+    MPI_Get_address(&tmpnodeval.bound_min_y, &address_node[13]);
+    MPI_Get_address(&tmpnodeval.bound_max_y, &address_node[14]);
+    MPI_Get_address(&tmpnodeval.bound_min_z, &address_node[15]);
+    MPI_Get_address(&tmpnodeval.bound_max_z, &address_node[16]);
+    MPI_Get_address(&tmpnodeval.nwf, &address_node[17]);
+    MPI_Get_address(&tmpnodeval.nef, &address_node[18]);
+    MPI_Get_address(&tmpnodeval.swf, &address_node[19]);
+    MPI_Get_address(&tmpnodeval.sef, &address_node[20]);
+    MPI_Get_address(&tmpnodeval.nwb, &address_node[21]);
+    MPI_Get_address(&tmpnodeval.neb, &address_node[22]);
+    MPI_Get_address(&tmpnodeval.swb, &address_node[23]);
+    MPI_Get_address(&tmpnodeval.seb, &address_node[24]);
+    
+
+    MPI_Aint displs_node[24];
+    for(int add = 0; add<24; add++)
+    {
+        displs_node[add] = MPI_Aint_diff(address_node[add+1], address_node[0]);    
+    }
+    
+    MPI_Datatype types_node[24] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, 
+                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,   
+                MPI_LOGICAL, MPI_LOGICAL, MPI_LOGICAL, MPI_LOGICAL,
+                MPI_LOGICAL, MPI_LOGICAL, MPI_LOGICAL, MPI_LOGICAL};
+
+    MPI_Datatype MyNode_val_mpi_t;
+    MPI_Type_create_struct(24, blk_length_node, displs_node, types_node, &MyNode_val_mpi_t);
+    MPI_Type_commit(&MyNode_val_mpi_t);
 
 
     auto t0 = clk::now();
