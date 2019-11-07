@@ -25,8 +25,6 @@ int main()
     MyNode *root = NULL;
     std::vector<MyNode_val> serializedNode_v;
     std::vector<MyParticle> particles_v;
-
-    //int n = 0;
     
     int n_serializednode = 0;     
     double bound_min_x = 0.;
@@ -131,6 +129,7 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto t0 = clk::now();
+    
     std::vector<int> displs_part_local = {0};
     std::vector<int> count_part_local;
     std::vector<MyParticle> particles_v_local;
@@ -143,6 +142,7 @@ int main()
         int depth_local = 4;
         int ln_local = 0;
         int n_nodes_depth_k_leaves = 0;
+
         MyParticle particle_local;
         MyNode *root_local = NULL;
     
@@ -198,8 +198,10 @@ int main()
     std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
 
     MPI_Bcast(&n_serializednode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (prank != 0) {
+    if (prank != 0)
+    {
         serializedNode_v.resize(n_serializednode);
+        count_part_local.resize(psize);
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
@@ -209,8 +211,11 @@ int main()
     deSerialize(root, serializedNode_v);
     std::cout<<"The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
+    MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    particles_v.resize(count_part_local[prank]);
     MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
-    
+
+    std::cout<<"The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
     std::cout<<"The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
     
     //DEBUG temp. do not keep for long
