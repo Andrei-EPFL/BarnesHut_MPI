@@ -295,7 +295,7 @@ int main()
 
     
     //if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
- /*   for(int step = 0; step<1; step++)
+    for(int step = 0; step<1; step++)
     {
         //Computation of forces 
         std::fill(fx.begin(), fx.end(), 0);
@@ -307,10 +307,10 @@ int main()
             {
                 //std::cout<<particles_v[i].node_index<<" "<<particles_v[i].proc_rank<<std::endl;
                 //if(compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send)==10) {std::cout<<"futaifutai"<<std::endl;}
-                //compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send);
+                compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send);
             }   
         }
-*/
+
         /*for(int p = 0; p < psize; p++)
         {
             mat_size_particles[prank][p] = mat_particles_send[p].size();
@@ -360,13 +360,13 @@ int main()
             {ofile<<particles_v[i].x<<" "<<particles_v[i].y<<" "<<particles_v[i].z<<std::endl;}
             ofile<<step<<std::endl;
         }*/
-    //}        
+    }        
     //if(prank==0){ofile.close();}
 
     second elapsed = clk::now() - t0;
-    std::cout<<prank<<": The remaining number of particles in the particles vector is= "<<particles_v.size() <<", for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<prank<<": The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<prank<<": End of program"<< std::endl<<std::endl;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The remaining number of particles in the particles vector is= "<<particles_v.size() << std::endl;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The large loop with steps takes "<<elapsed.count() << " seconds"<<std::endl;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": End of program"<< std::endl<<std::endl;
 
     MPI_Type_free(&MyParticle_mpi_t);
     MPI_Type_free(&MyNode_val_mpi_t);
