@@ -1,3 +1,21 @@
+ 
+
+ //Debugging
+    int n_elem_flagged =0 ;
+    std::cout<"prank="<prank<<"-"<<psize<<": There are " << numNodesElemFlagged(root, &n_elem_flagged)<<" flagged nodes ";
+    std::cout<<"and " <<n_elem_flagged<<" elements\n";
+        
+    int n_elem_depthk =0 ;
+    std::cout<"prank="<prank<<"-"<<psize<<": There are " << numNodesElemHeightK(root, DEPTH_DEF, &n_elem_depthk)<<"  nodes at depth "<< DEPTH_DEF;
+    std::cout<<"and " <<n_elem_depthk<<" elements\n";
+        
+    int n_elem_flagged_1 =0 ;
+    std::cout<"prank="<prank<<"-"<<psize<<": There are " << numNodesHeightDepthFlag(root, &n_elem_flagged_1) <<" flagged nodes ";
+    std::cout<<"and " << n_elem_flagged_1<< " elements\n";
+    //////////
+ 
+ 
+
  //DEBUG temp. do not keep for long
     std::cout<<prank<<": The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<prank<<": The root has nwb " << root->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;

@@ -168,20 +168,6 @@ int main()
         /////////////////////////////////
 
         numNodeDepthKandLeaves(root_local, depth_local, &n_nodes_depth_k_leaves); //Flags the nodes that are at depth=depth_local and the nodes that are leaves having a depth<depth_local.
-        
-        //Debugging
-        int n_elem_flagged =0 ;
-        std::cout<<"There are " << numNodesElemFlagged(root_local, &n_elem_flagged)<<" flagged nodes ";
-        std::cout<<"and " <<n_elem_flagged<<" elements\n";
-        
-        int n_elem_depthk =0 ;
-        std::cout<<"There are " << numNodesElemHeightK(root_local, depth_local, &n_elem_depthk)<<"  nodes at depth "<< depth_local;
-        std::cout<<" and " <<n_elem_depthk<<" elements\n";
-        
-        int n_elem_flagged_1 =0 ;
-        std::cout<<"There are " << numNodesHeightDepthFlag(root_local, &n_elem_flagged_1) <<" flagged nodes ";
-        std::cout<<"and " << n_elem_flagged_1<< " elements\n";
-        //////////
 
         unsigned int n_tmp_part_count = 0;
         unsigned int n_tmp_part_displs = 0;
@@ -215,15 +201,15 @@ int main()
         std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;     
         
         //Debugging
-        n_elem_flagged =0 ;
+        int n_elem_flagged =0 ;
         std::cout<<"There are " << numNodesElemFlagged(root_local, &n_elem_flagged)<<" flagged nodes ";
         std::cout<<"and " <<n_elem_flagged<<" elements\n";
         
-        n_elem_depthk =0 ;
+        int n_elem_depthk =0 ;
         std::cout<<"There are " << numNodesElemHeightK(root_local, depth_local, &n_elem_depthk)<<"  nodes at depth "<< depth_local;
         std::cout<<" and " <<n_elem_depthk<<" elements\n";
         
-        n_elem_flagged_1 =0 ;
+        int n_elem_flagged_1 =0 ;
         std::cout<<"There are " << numNodesHeightDepthFlag(root_local, &n_elem_flagged_1) <<" flagged nodes ";
         std::cout<<"and " << n_elem_flagged_1<< " elements\n\n\n";
         //////////
@@ -235,8 +221,9 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto t1 = clk::now();
-    std::cout<<prank<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
 
+    //// Send a global tree to everyone.
     MPI_Bcast(&n_serializednode, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (prank != 0)
     {
@@ -245,50 +232,46 @@ int main()
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
-    std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
-    std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << n_serializednode << " elements"<<std::endl; 
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << serializedNode_v.size() << " elements"<<std::endl;    
     
     deSerialize(root, serializedNode_v);
-    std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-    
-    //Debugging
-    int n_elem_flagged =0 ;
-    std::cout<<prank<<": There are " << numNodesElemFlagged(root, &n_elem_flagged)<<" flagged nodes ";
-    std::cout<<"and " <<n_elem_flagged<<" elements\n";
-        
-    int n_elem_depthk =0 ;
-    std::cout<<prank<<": There are " << numNodesElemHeightK(root, DEPTH_DEF, &n_elem_depthk)<<"  nodes at depth "<< DEPTH_DEF;
-    std::cout<<"and " <<n_elem_depthk<<" elements\n";
-        
-    int n_elem_flagged_1 =0 ;
-    std::cout<<prank<<": There are " << numNodesHeightDepthFlag(root, &n_elem_flagged_1) <<" flagged nodes ";
-    std::cout<<"and " << n_elem_flagged_1<< " elements\n";
-    //////////
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements"<<std::endl;
+    ////
 
-    //MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
-    //particles_v.resize(count_part_local[prank]);
-    //MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+    ////Send particles to everyone.
+    MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    particles_v.resize(count_part_local[prank]);
+    MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
-/*
-    std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
-    std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
-    std::cout<<prank<<": The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-  */  
-    //root contains the common tree; particles_v is a vector containing particles depending on the process; 
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << count_part_local[prank] <<std::endl;    
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << particles_v.size() <<std::endl;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The root node has "<<root->elements << " elements"<<std::endl;
+    ////
+    ////root contains the common (global) tree; particles_v is a vector containing particles depending on the process; 
     
-    //Compute the local tree starting from the common tree.
-  /*  int index = 10000;
+    ////Compute the local tree starting from the common tree.
+    int index = 10000;
     for(unsigned int i = 0; i < particles_v.size(); i++)
     {
         add_particle_locally(root, particles_v[i], prank, &index);
     }
     
-    //int ntmp= 0;
-    //std::cout<<prank<<": PUUUUTEPUUUTEPUUUTE "<<numNodesHeightDepthFlag(root, &ntmp)<<" and "<<ntmp<<std::endl;
-    //ntmp = 0;
-   // std::cout<<prank<<": "<<numNodesHeightK_tmp(root, 4, &ntmp)<< " and " << ntmp<<std::endl;
+    //Debugging
+    int n_elem_flagged =0 ;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesElemFlagged(root, &n_elem_flagged)<<" flagged nodes ";
+    std::cout<<"and " <<n_elem_flagged<<" elements\n";
+        
+    int n_elem_depthk =0 ;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesElemHeightK(root, DEPTH_DEF, &n_elem_depthk)<<"  nodes at depth "<< DEPTH_DEF;
+    std::cout<<"and " <<n_elem_depthk<<" elements\n";
+        
+    int n_elem_flagged_1 =0 ;
+    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesHeightDepthFlag(root, &n_elem_flagged_1) <<" flagged nodes ";
+    std::cout<<"and " << n_elem_flagged_1<< " elements\n";
+    //////////
+ 
     ////////////////////////////////////////////////////// 
-    
     //Declaration of variables for the actual computation
     std::vector<double> fx(particles_v.size());
     std::vector<double> fy(particles_v.size());
@@ -308,7 +291,7 @@ int main()
     }
 
     std::vector<std::vector<MyParticle>> mat_particles_send(psize);
-  */  //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
+    //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
 
     
     //if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
