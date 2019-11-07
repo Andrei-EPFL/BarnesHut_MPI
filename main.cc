@@ -23,6 +23,9 @@ int main()
 
     //Declartion (and initialization) of some variables
     MyNode *root = NULL;
+    std::vector<MyNode_val> serializedNode_v;
+    std::vector<MyParticle> particles_v;
+
     //int n = 0;
     
     int n_serializednode = 0;     
@@ -127,9 +130,10 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<MyNode_val> serializedNode_v;
-    std::vector<MyParticle> particles_v;
     auto t0 = clk::now();
+    std::vector<int> displs_part_local = {0};
+    std::vector<int> count_part_local;
+    std::vector<MyParticle> particles_v_local;
 
     if(prank == 0)
     {
@@ -139,9 +143,7 @@ int main()
         int depth_local = 4;
         int ln_local = 0;
         int n_nodes_depth_k_leaves = 0;
-        
         MyParticle particle_local;
-        std::vector<MyParticle> particles_v_local;
         MyNode *root_local = NULL;
     
         infile.open("./input/disk.txt", std::ios::in);
@@ -164,33 +166,24 @@ int main()
         serialize(root_local, serializedNode_v, depth_local);
         n_serializednode = serializedNode_v.size();
         
-        //THIS PSIZE HAS TO BE DELETED; IT IS USED FOR DEBUG ONLY;
-        psize = 10;
-        unsigned int n_tmp_part_debug = 0;
+        unsigned int n_tmp_part_count = 0;
+        unsigned int n_tmp_part_displs = 0;
         for(int p = 0; p < psize; p++)
         {
             ln_local = n_nodes_depth_k_leaves/psize + (p < n_nodes_depth_k_leaves % psize ? 1 : 0);
-            linkParticlesNodepRank(root_local, depth_local, particles_v_local, p, &ln_local, &n_tmp_part_debug);
-            std::cout<<n_tmp_part_debug<<" ";
+            linkParticlesNodepRank(root_local, depth_local, particles_v_local, p, &ln_local, &n_tmp_part_count);
+            count_part_local.push_back(n_tmp_part_count);
+            n_tmp_part_displs = n_tmp_part_count + n_tmp_part_displs;
+            displs_part_local.push_back(n_tmp_part_displs);
+            n_tmp_part_count = 0;
         }
 
-        std::cout<<"\n\n\n";
-        if(n_tmp_part_debug != particles_v_local.size()) {std::cout<<"There is an issue with the repartization of nodes (and particles) to process\n";}
-
-        for(unsigned part = 0; part < particles_v_local.size(); part++)
-        {
-            std::cout<<particles_v_local[part].proc_rank<<" ";
-        }
-        
+        displs_part_local.erase(displs_part_local.end()-1);
+        if(displs_part_local.size() != (unsigned int)psize && count_part_local.size() != (unsigned int)psize){std::cout<<"The number of displacements is not correct\n";}
+        if(n_tmp_part_displs != particles_v_local.size()) {std::cout<<"There is an issue with the repartization of nodes (and particles) to processes\n";}
+       
         std::sort(particles_v_local.begin(), particles_v_local.end(), compareByprank);
-        
-        std::cout<<"\n\n\n";
-        for(unsigned part = 0; part < particles_v_local.size(); part++)
-        {
-            std::cout<<particles_v_local[part].proc_rank<<" ";
-        }
-        //MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);
-
+     
         std::cout<<"\n\nThe final number of nodes in the root tree (the whole tree) is "<<index_local<<std::endl;
         std::cout<<"The root node has "<<root_local->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
         std::cout<<"The particles vector has " << particles_v_local.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl; 
@@ -215,6 +208,10 @@ int main()
     
     deSerialize(root, serializedNode_v);
     std::cout<<"The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    
+    MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+    
+    std::cout<<"The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
     
     //DEBUG temp. do not keep for long
     /*std::cout<<"The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
