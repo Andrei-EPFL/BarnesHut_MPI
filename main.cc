@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <numeric> 
 #include <chrono>
 #include "update_node.h"
 #include "dynamics.h"
@@ -200,7 +201,7 @@ int main()
         std::cout<<"There are "<<n_nodes_depth_k_leaves<<" nodes and leaves at depth "<<depth_local<<std::endl;        
         std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;     
         
-        //Debugging
+        /*//Debugging
         int n_elem_flagged =0 ;
         std::cout<<"There are " << numNodesElemFlagged(root_local, &n_elem_flagged)<<" flagged nodes ";
         std::cout<<"and " <<n_elem_flagged<<" elements\n";
@@ -213,7 +214,7 @@ int main()
         std::cout<<"There are " << numNodesHeightDepthFlag(root_local, &n_elem_flagged_1) <<" flagged nodes ";
         std::cout<<"and " << n_elem_flagged_1<< " elements\n\n\n";
         //////////
-
+        */
         free_node(root_local);
         root_local = NULL;
     }
@@ -221,7 +222,7 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto t1 = clk::now();
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
 
     //// Send a global tree to everyone.
     MPI_Bcast(&n_serializednode, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -232,11 +233,11 @@ int main()
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << n_serializednode << " elements"<<std::endl; 
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << serializedNode_v.size() << " elements"<<std::endl;    
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << n_serializednode << " elements"<<std::endl; 
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector has " << serializedNode_v.size() << " elements"<<std::endl;    
     
     deSerialize(root, serializedNode_v);
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements"<<std::endl;
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements"<<std::endl;
     ////
 
     ////Send particles to everyone.
@@ -244,9 +245,9 @@ int main()
     particles_v.resize(count_part_local[prank]);
     MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << count_part_local[prank] <<std::endl;    
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << particles_v.size() <<std::endl;
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The root node has "<<root->elements << " elements"<<std::endl;
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << count_part_local[prank] <<std::endl;    
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << particles_v.size() <<std::endl;
+    //std::cout<<"prank="<<prank<<"-"<<psize<<": The root node has "<<root->elements << " elements"<<std::endl;
     ////
     ////root contains the common (global) tree; particles_v is a vector containing particles depending on the process; 
     
@@ -256,21 +257,7 @@ int main()
     {
         add_particle_locally(root, particles_v[i], prank, &index);
     }
-    
-    //Debugging
-    int n_elem_flagged =0 ;
-    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesElemFlagged(root, &n_elem_flagged)<<" flagged nodes ";
-    std::cout<<"and " <<n_elem_flagged<<" elements\n";
-        
-    int n_elem_depthk =0 ;
-    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesElemHeightK(root, DEPTH_DEF, &n_elem_depthk)<<"  nodes at depth "<< DEPTH_DEF;
-    std::cout<<"and " <<n_elem_depthk<<" elements\n";
-        
-    int n_elem_flagged_1 =0 ;
-    std::cout<<"prank="<<prank<<"-"<<psize<<": There are " << numNodesHeightDepthFlag(root, &n_elem_flagged_1) <<" flagged nodes ";
-    std::cout<<"and " << n_elem_flagged_1<< " elements\n";
-    //////////
- 
+     
     ////////////////////////////////////////////////////// 
     //Declaration of variables for the actual computation
     std::vector<double> fx(particles_v.size());
@@ -311,16 +298,42 @@ int main()
             }   
         }
 
-        /*for(int p = 0; p < psize; p++)
+        std::cout<<"prank="<<prank<<"-"<<psize<<": The array with the numbers of particles that process "<<prank<<" has to send to the other proc: ";
+        for(int p = 0; p < psize; p++)
         {
             mat_size_particles[prank][p] = mat_particles_send[p].size();
             std::cout<< mat_particles_send[p].size()<<" ";
         }
-        std::cout<<std::endl;*/
-        /*MPI_Bcast(mat_size_particles[prank].data(), psize, MPI_INT, prank, MPI_COMM_WORLD);
-    
-        for(int j = 0; j < psize; j++)
-        {        
+        //std::cout<<std::endl;
+        
+        //MPI_Bcast(mat_size_particles[p].data(), psize, MPI_INT, prank, MPI_COMM_WORLD);
+        
+        //int *ptr = new int [psize][psize];
+        //MPI_Type_vector(psize, psize, psize, MPI_INT, &MyVector_mpi_t);
+        //MPI_Type_commit(&MyVector_mpi_t);
+        
+        std::vector<int> recvcount(psize);
+        std::vector<int> displacements(psize);
+        for(unsigned i = 0; i < displacements.size(); i++)
+        {displacements[i]= psize*i;}
+
+        std::fill(recvcount.begin(), recvcount.end(), psize);
+        
+        std::vector<int> mat_recv(psize*psize);
+
+        MPI_GATHERV(mat_size_particles[prank].data(), mat_size_particles[prank].size(), MPI_INT, mat_recv.data(), *recvcount.data(), *displacements.data(), MPI_INT, 0, MPI_COMM_WORLD);
+
+        /*
+        std::cout<<"prank="<<prank<<"-"<<psize<<": The pointer "<<prank<<" has to send to the other proc: ";
+        for(int p = 0; p < psize; p++)
+        {
+            std::cout<< ptr[p] << " ";
+        //    std::cout<< mat_particles_send[p].size()<<" ";
+        }*/
+
+        /*for(int j = 0; j < psize; j++)
+        { 
+            std::cout<<"prank="<<prank<<"-"<<psize<<": The array with the numbers of particles that process "<<j<<" has to send to the other proc: ";      
             for(int p = 0; p < psize; p++)
             {
                 std::cout<<mat_size_particles[j][p]<<" ";

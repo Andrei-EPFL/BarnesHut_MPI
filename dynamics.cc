@@ -227,50 +227,18 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
                 *fy += child_fy;
                 *fz += child_fz;
             }
-            if(node->depthflag == 1)
-            {
-                if(node->nwf != NULL || node->nef != NULL || node->swf != NULL || node->sef != NULL || node->nwb != NULL || node->neb != NULL || node->swb != NULL || node->seb != NULL)
-                {
-                    std::cout<<"BRANZASTRICATA\n";
-                }
-                else
-                {
-                    std::cout<<"CASCAVALAFUMAT\n";
-                }
-            }
             
             if(node->nwf == NULL && node->nef == NULL && node->swf == NULL && node->sef == NULL && node->nwb == NULL && node->neb == NULL && node->swb == NULL && node->seb == NULL)
             {
-                std::cout<<"The flag of the node is "<< node->depthflag <<"\n";
-            } 
+                if(node->depthflag==1)
+                {
+                    if(node->proc_rank<0) {std::cout<<"ERROR: the rank of the node is negative! This is not ok!.cc\n";}
+                    else{mat_particles_send[node->proc_rank].push_back(particle);}
+                }
+                else {std::cout<<"ERROR: This should not have happened in dynamics.cc\n";}
+            }
         }
     }
     else {std::cout<<"This node has no elements\n";}
-    return 2;
-
-    //std::cout<<"pufPUFPUFPUF: "<<puf<<" "<<node->depthflag<<" "<<node->index<<std::endl;
-    //if(node->depthflag == 1) { std::cout<<"ma caca pe teot ce se poate\n";} //return 5;}
-    
-    //if(node->depthflag == 1) {return 3;}
-    //if(node->index == 95) {return 3;}
-    
-     /*if(node->nwf != NULL || node->nef != NULL || node->swf != NULL || node->sef != NULL || node->nwb != NULL || node->neb != NULL || node->swb != NULL || node->seb != NULL)
-            {
-                std::cout<<"branzaSTRICATA\n";
-            }
-            std::cout<<"CACATPEBATCACATPEBAT \n";
-        */
-
-
-            /*if(node->depthflag == 1)
-            {  
-                std::cout<<"rank of process of the node " <<node->proc_rank<<std::endl; 
-                    //std::cout<<"this has flag1\n";
-             //       mat_particles_send[node->proc_rank].push_back(particle);
-            }
-            if(node->nwf == NULL && node->nef == NULL && node->swf == NULL && node->sef == NULL && node->nwb == NULL && node->neb == NULL && node->swb == NULL && node->seb == NULL)
-            {
-                std::cout<<"branza\n";
-                return 0;
-            }*/
+    return 2;            
 }
