@@ -117,14 +117,6 @@ MyNode* newNode(MyNode_val local_node_val)
 
 void deSerialize(MyNode *&node, std::vector<MyNode_val> &vect) 
 { 
-    
-    // Read next item from file. If theere are no more items or next 
-    // item is marker, then return 
-    //if(!vect)
-    //{
-    //    std::cout<<"The vector is empty;\n"
-    //} 
-    // Else create node with this item and recur for children 
     if(!vect.empty())
     {
         MyNode_val local_node_val = *vect.begin();
@@ -145,43 +137,10 @@ void deSerialize(MyNode *&node, std::vector<MyNode_val> &vect)
     }
 } 
 
-int numNodesHeightK(MyNode *root, int k, int *n)
-{
-    if(root == NULL) return 0; //if the tree is empty return 0
-    if(k == 0)
-    {
-        root->depthflag=1;
-        *n = *n+ root->elements;
-        return 1; //if k = 0, then the root is the only node to return 
-    }
-    return numNodesHeightK(root->nwf, k-1, n) + numNodesHeightK(root->nef, k-1, n) + numNodesHeightK(root->swf, k-1, n) + numNodesHeightK(root->sef, k-1, n)+ numNodesHeightK(root->nwb, k-1, n) + numNodesHeightK(root->neb, k-1, n) + numNodesHeightK(root->swb, k-1, n) + numNodesHeightK(root->seb, k-1, n);
-}
-
-int numNodesHeightDepthFlag(MyNode *root, int *n)
-{
-    if(root == NULL) return 0; //if the tree is empty return 0
-    if(root->depthflag == 1)
-    {
-        *n = *n+ root->elements;
-        std::cout<<root->index<<" "<<root->elements<<std::endl;
-        return 1; //if k = 0, then the root is the only node to return 
-    }
-    return numNodesHeightDepthFlag(root->nwf, n) + numNodesHeightDepthFlag(root->nef, n) + numNodesHeightDepthFlag(root->swf, n) + numNodesHeightDepthFlag(root->sef, n)+ numNodesHeightDepthFlag(root->nwb, n) + numNodesHeightDepthFlag(root->neb, n) + numNodesHeightDepthFlag(root->swb, n) + numNodesHeightDepthFlag(root->seb, n);
-}
-
-int numNodesHeightK_tmp(MyNode *root, int k, int *n)
-{
-    if(root == NULL) return 0; //if the tree is empty return 0
-    if(k == 0)
-    {
-        *n = *n+ root->elements;
-        return 1; //if k = 0, then the root is the only node to return 
-    }
-    return numNodesHeightK(root->nwf, k-1, n) + numNodesHeightK(root->nef, k-1, n) + numNodesHeightK(root->swf, k-1, n) + numNodesHeightK(root->sef, k-1, n)+ numNodesHeightK(root->nwb, k-1, n) + numNodesHeightK(root->neb, k-1, n) + numNodesHeightK(root->swb, k-1, n) + numNodesHeightK(root->seb, k-1, n);
-}
-
 void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes)
-{   
+{
+    //This function flags the nodes at depth k and the leaves at depth < k
+    //Returns by reference the number of flagged nodes.
     if(root == NULL){std::cout<<"There is no root node\n";}
     else
     {   
@@ -215,7 +174,7 @@ void linkParticlesNodepRank(MyNode *root, int k, std::vector<MyParticle> &partic
     else
     {
         if(*ln > 0 && root->proc_rank<0)
-        {   
+        {
             if(k == 0)
             {
                 root->proc_rank = p;
@@ -230,8 +189,7 @@ void linkParticlesNodepRank(MyNode *root, int k, std::vector<MyParticle> &partic
                             particles[i].proc_rank = p;
                             particles[i].node_index = root->index;            
                         }               
-                }
-                
+                }   
             }
             else
             {
@@ -253,10 +211,10 @@ void linkParticlesNodepRank(MyNode *root, int k, std::vector<MyParticle> &partic
                         if(particles[i].x <= root->bound_max_x && particles[i].x > root->bound_min_x && 
                         particles[i].y <= root->bound_max_y && particles[i].y > root->bound_min_y &&
                         particles[i].z <  root->bound_max_z && particles[i].z >= root->bound_min_z)
-                            {
-                                particles[i].proc_rank = p;
-                                particles[i].node_index = root->index;            
-                            }               
+                        {
+                            particles[i].proc_rank = p;
+                            particles[i].node_index = root->index;            
+                        }               
                     }
                 }
             }
@@ -268,3 +226,61 @@ bool compareByprank(const MyParticle &a, const MyParticle &b)
 {
     return a.proc_rank < b.proc_rank;
 }
+
+///////////////// The following functions are useful for debugging
+
+int numNodesHeightDepthFlag(MyNode *root, int *n)
+{
+    //This functions returns by reference the total number of elements from all flagged nodes and
+    //returns the depth of the flagged nodes.
+    if(root == NULL) return 0;
+    if(root->depthflag == 1)
+    {
+        *n = *n+ root->elements;
+        std::cout<<"Index of the node "<<root->index<<"; The no of elem of that node "<<root->elements<<"; The assigned process "<<root->proc_rank<<std::endl;
+        return 1; 
+    }
+    return numNodesHeightDepthFlag(root->nwf, n) + numNodesHeightDepthFlag(root->nef, n) + numNodesHeightDepthFlag(root->swf, n) + numNodesHeightDepthFlag(root->sef, n)+ numNodesHeightDepthFlag(root->nwb, n) + numNodesHeightDepthFlag(root->neb, n) + numNodesHeightDepthFlag(root->swb, n) + numNodesHeightDepthFlag(root->seb, n);
+}
+
+int numNodesHeightKandFlags(MyNode *root, int k, int *n)
+{
+    //This function flags the nodes that are exactly at the depth k
+    //Returns the number of nodes at precisely depth k
+    //Returns by reference the number of elements at depth k
+    if(root == NULL) return 0; 
+    if(k == 0)
+    {
+        root->depthflag=1;
+        *n = *n+ root->elements;
+        return 1;
+    }
+    return numNodesHeightKandFlags(root->nwf, k-1, n) + numNodesHeightKandFlags(root->nef, k-1, n) + numNodesHeightKandFlags(root->swf, k-1, n) + numNodesHeightKandFlags(root->sef, k-1, n)+ numNodesHeightKandFlags(root->nwb, k-1, n) + numNodesHeightKandFlags(root->neb, k-1, n) + numNodesHeightKandFlags(root->swb, k-1, n) + numNodesHeightKandFlags(root->seb, k-1, n);
+}
+
+int numNodesElemHeightK(MyNode *root, int k, int *n)
+{
+    //This function returns the number of nodes precisely at depth k
+    //This function returns by reference the number of elements at depth k
+    if(root == NULL) return 0; 
+    if(k == 0)
+    {
+        *n = *n+ root->elements;
+        return 1;  
+    }
+    return numNodesElemHeightK(root->nwf, k-1, n) + numNodesElemHeightK(root->nef, k-1, n) + numNodesElemHeightK(root->swf, k-1, n) + numNodesElemHeightK(root->sef, k-1, n)+ numNodesElemHeightK(root->nwb, k-1, n) + numNodesElemHeightK(root->neb, k-1, n) + numNodesElemHeightK(root->swb, k-1, n) + numNodesElemHeightK(root->seb, k-1, n);
+}
+
+int numNodesElemFlagged(MyNode *root, int *n)
+{
+    //This function returns the number of elements from all flagged nodes.
+    //Returns the number of flagged nodes.
+    if(root == NULL) return 0;
+    if(root->depthflag==1)
+    {
+        *n = *n+ root->elements;
+        return 1;
+    }
+    return numNodesElemFlagged(root->nwf, n) + numNodesElemFlagged(root->nef, n) + numNodesElemFlagged(root->swf, n) + numNodesElemFlagged(root->sef, n)+ numNodesElemFlagged(root->nwb, n) + numNodesElemFlagged(root->neb, n) + numNodesElemFlagged(root->swb, n) + numNodesElemFlagged(root->seb, n);
+}
+

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <vector>
 #include "dynamics.h"
-#define THETA_DEF 0.
+#define THETA_DEF 0.01
 int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy, double *fz)
 {
     const float theta = THETA_DEF;
@@ -116,18 +116,19 @@ int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy, dou
 }
 
 
-int compute_force_partially(MyNode *node, MyParticle particle, double *fx, double *fy, double *fz, std::vector<std::vector<MyParticle>> &mat_particles_send, int puf)
+int compute_force_partially(MyNode *node, MyParticle particle, double *fx, double *fy, double *fz, std::vector<std::vector<MyParticle>> &mat_particles_send)
 {
-    const float theta = 0.;
+    const float theta = THETA_DEF;
     //const double G = 6.672e-11; //m, kg, s
     const double G = 4.49e-11;//kpc, Msun, MegaYear
     const float epsilon = 0.1; //kpc
-    std::cout<<"pufPUFPUFPUF: "<<puf<<" "<<node->depthflag<<" "<<node->index<<std::endl;
-    if(node->depthflag == 1) {return 10;}
     if(!node) {std::cout<<"There is no node, so Bye Bye\n"; return 0;}
+    //std::cout<<"pufPUFPUFPUF: "<<puf<<" "<<node->depthflag<<" "<<node->index<<std::endl;
+    //if(node->depthflag == 1) { std::cout<<"ma caca pe teot ce se poate\n";} //return 5;}
+    
     *fx = *fy = *fz = 0;
-    if(node->depthflag == 1) {return 3;}
-    if(node->index == 95) {return 3;}
+    //if(node->depthflag == 1) {return 3;}
+    //if(node->index == 95) {return 3;}
     // Compute the distance between the COM of the node and the particle
     double distance = std::sqrt(std::pow(node->COM_x-particle.x, 2) + 
                               std::pow(node->COM_y-particle.y, 2) + 
@@ -146,11 +147,12 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
     as a particle with totalmass at position COM_x and COM_y. Thus the computation of the force can be done*/
     if(node->elements == 1)
     {
-        if(node->nwf != NULL || node->nef != NULL || node->swf != NULL || node->sef != NULL || node->nwb != NULL || node->neb != NULL || node->swb != NULL || node->seb != NULL)
+        /*if(node->nwf != NULL || node->nef != NULL || node->swf != NULL || node->sef != NULL || node->nwb != NULL || node->neb != NULL || node->swb != NULL || node->seb != NULL)
             {
                 std::cout<<"branzaSTRICATA\n";
             }
             std::cout<<"CACATPEBATCACATPEBAT \n";
+        */
         distance = std::sqrt(std::pow(distance,2) + std::pow(epsilon,2));
         double distance3 = std::pow(distance, 3);
         *fx = G * particle.mass * node->totalmass * (node->COM_x - particle.x)/distance3;
@@ -162,7 +164,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
         
         if(quadrant_avg_size/distance < theta)
         {   
-            std::cout<<"futaitreifutaipatrufutai\n";
+            //std::cout<<"futaitreifutaipatrufutai\n";
             distance = std::sqrt(std::pow(distance,2) + std::pow(epsilon,2));  
             double distance3 = std::pow(distance, 3);
             *fx = G * particle.mass * node->totalmass * (node->COM_x - particle.x)/distance3;
@@ -171,15 +173,21 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
         }
         else
         {   if(node->depthflag == 1)
-            {   
-                    std::cout<<"this has flag1\n";
-                    mat_particles_send[node->proc_rank].push_back(particle);
+            {  
+                std::cout<<"rank of process of the node " <<node->proc_rank<<std::endl; 
+                    //std::cout<<"this has flag1\n";
+             //       mat_particles_send[node->proc_rank].push_back(particle);
+            }
+            if(node->nwf == NULL && node->nef == NULL && node->swf == NULL && node->sef == NULL && node->nwb == NULL && node->neb == NULL && node->swb == NULL && node->seb == NULL)
+            {
+                std::cout<<"branza\n";
+                return 0;
             }
             /*Else, we need to examinate the children of this node to compute the force.*/
             double child_fx = 0; double child_fy = 0; double child_fz = 0;
             if (node->nwf)
             {
-                compute_force_partially(node->nwf, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->nwf, particle, &child_fx, &child_fy, &child_fz, mat_particles_send);
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -187,7 +195,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->nef)
             {
-                compute_force_partially(node->nef, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->nef, particle, &child_fx, &child_fy, &child_fz, mat_particles_send);
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -195,7 +203,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->swf)
             {
-                compute_force_partially(node->swf, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->swf, particle, &child_fx, &child_fy, &child_fz, mat_particles_send);
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -203,7 +211,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->sef)
             {
-                compute_force_partially(node->sef, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1);
+                compute_force_partially(node->sef, particle, &child_fx, &child_fy, &child_fz, mat_particles_send);
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -211,7 +219,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->nwb)
             {
-                compute_force_partially(node->nwb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->nwb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send );
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -219,7 +227,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->neb)
             {
-                compute_force_partially(node->neb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1);
+                compute_force_partially(node->neb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send);
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -227,7 +235,7 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->swb)
             {
-                compute_force_partially(node->swb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->swb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send );
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
@@ -235,16 +243,13 @@ int compute_force_partially(MyNode *node, MyParticle particle, double *fx, doubl
             child_fx = child_fy = child_fz = 0;
             if (node->seb)
             {
-                compute_force_partially(node->seb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send, puf+1 );
+                compute_force_partially(node->seb, particle, &child_fx, &child_fy, &child_fz, mat_particles_send );
                 *fx += child_fx;
                 *fy += child_fy;
                 *fz += child_fz;
             }
             
-            if(node->nwf == NULL && node->nef == NULL && node->swf == NULL && node->sef == NULL && node->nwb == NULL && node->neb == NULL && node->swb == NULL && node->seb == NULL)
-            {
-                std::cout<<"branza\n";
-            }
+            
         }
     }
     else {std::cout<<"This node has no elements\n";}

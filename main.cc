@@ -138,7 +138,8 @@ int main()
     std::vector<int> count_part_local;
     std::vector<MyParticle> particles_v_local;
     std::ofstream ofile;
-        
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ///// Sequential part begin
     if(prank == 0)
     {
         std::ifstream infile;
@@ -149,9 +150,9 @@ int main()
 
         MyParticle particle_local;
         MyNode *root_local = NULL;
-    
+
+        //Initialisation of the root_local node and particles_v_local
         infile.open("./input/disk.txt", std::ios::in);
-        //Initialisation of the root node
         infile>>particle_local.x>>particle_local.y>>particle_local.z>>particle_local.vx>>particle_local.vy>>particle_local.vz>>particle_local.mass;
         particle_local.outside = false; particle_local.node_index = -1; particle_local.proc_rank = -1;
         root_local = initialize_node(particle_local, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index_local);
@@ -163,40 +164,75 @@ int main()
             particles_v_local.push_back(particle_local);
             add_particle(root_local, particle_local, bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z, &index_local);
         }
-        //
         infile.close();
+        /////////////////////////////////
+
+        numNodeDepthKandLeaves(root_local, depth_local, &n_nodes_depth_k_leaves); //Flags the nodes that are at depth=depth_local and the nodes that are leaves having a depth<depth_local.
         
-        numNodeDepthKandLeaves(root_local, depth_local, &n_nodes_depth_k_leaves);
-        serialize(root_local, serializedNode_v, depth_local);
-        n_serializednode = serializedNode_v.size();
+        //Debugging
+        int n_elem_flagged =0 ;
+        std::cout<<"There are " << numNodesElemFlagged(root_local, &n_elem_flagged)<<" flagged nodes ";
+        std::cout<<"and " <<n_elem_flagged<<" elements\n";
         
+        int n_elem_depthk =0 ;
+        std::cout<<"There are " << numNodesElemHeightK(root_local, depth_local, &n_elem_depthk)<<"  nodes at depth "<< depth_local;
+        std::cout<<" and " <<n_elem_depthk<<" elements\n";
+        
+        int n_elem_flagged_1 =0 ;
+        std::cout<<"There are " << numNodesHeightDepthFlag(root_local, &n_elem_flagged_1) <<" flagged nodes ";
+        std::cout<<"and " << n_elem_flagged_1<< " elements\n";
+        //////////
+
         unsigned int n_tmp_part_count = 0;
         unsigned int n_tmp_part_displs = 0;
+        std::cout<<"The number of nodes per process: ";
         for(int p = 0; p < psize; p++)
         {
             ln_local = n_nodes_depth_k_leaves/psize + (p < n_nodes_depth_k_leaves % psize ? 1 : 0);
+            std::cout<<ln_local<<" ";
             linkParticlesNodepRank(root_local, depth_local, particles_v_local, p, &ln_local, &n_tmp_part_count);
+            
             count_part_local.push_back(n_tmp_part_count);
             n_tmp_part_displs = n_tmp_part_count + n_tmp_part_displs;
             displs_part_local.push_back(n_tmp_part_displs);
             n_tmp_part_count = 0;
         }
+        std::cout<<"\n";
 
         displs_part_local.erase(displs_part_local.end()-1);
-        if(displs_part_local.size() != (unsigned int)psize && count_part_local.size() != (unsigned int)psize){std::cout<<"The number of displacements is not correct\n";}
-        if(n_tmp_part_displs != particles_v_local.size()) {std::cout<<"There is an issue with the repartization of nodes (and particles) to processes\n";}
+        if(displs_part_local.size() != (unsigned int)psize && count_part_local.size() != (unsigned int)psize){std::cout<<"ERROR: The number of displacements is not correct\n";}
+        if(n_tmp_part_displs != particles_v_local.size()) {std::cout<<"ERROR: There is an issue with the repartization of nodes (and particles) to processes\n";}
        
         std::sort(particles_v_local.begin(), particles_v_local.end(), compareByprank);
-     
+        
+        serialize(root_local, serializedNode_v, depth_local);
+        n_serializednode = serializedNode_v.size();
+        
         std::cout<<"\n\nThe final number of nodes in the root tree (the whole tree) is "<<index_local<<std::endl;
         std::cout<<"The root node has "<<root_local->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
         std::cout<<"The particles vector has " << particles_v_local.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl; 
         std::cout<<"There are "<<n_nodes_depth_k_leaves<<" nodes and leaves at depth "<<depth_local<<std::endl;        
         std::cout<<"The serialized node vector has " << n_serializednode << " nodes for process "<<prank<<" from the total of "<<psize<<std::endl<<std::endl;     
         
+        //Debugging
+        n_elem_flagged =0 ;
+        std::cout<<"There are " << numNodesElemFlagged(root_local, &n_elem_flagged)<<" flagged nodes ";
+        std::cout<<"and " <<n_elem_flagged<<" elements\n";
+        
+        n_elem_depthk =0 ;
+        std::cout<<"There are " << numNodesElemHeightK(root_local, depth_local, &n_elem_depthk)<<"  nodes at depth "<< depth_local;
+        std::cout<<" and " <<n_elem_depthk<<" elements\n";
+        
+        n_elem_flagged_1 =0 ;
+        std::cout<<"There are " << numNodesHeightDepthFlag(root_local, &n_elem_flagged_1) <<" flagged nodes ";
+        std::cout<<"and " << n_elem_flagged_1<< " elements\n\n\n";
+        //////////
+
         free_node(root_local);
         root_local = NULL;
     }
+    /////// END OF MOST OF THE SEQUENTIAL PART
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto t1 = clk::now();
     std::cout<<prank<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
@@ -209,15 +245,29 @@ int main()
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
-    //std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
-    //std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
+    std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
+    std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
     
     deSerialize(root, serializedNode_v);
-    //std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
-    MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
-    particles_v.resize(count_part_local[prank]);
-    MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+    //Debugging
+    int n_elem_flagged =0 ;
+    std::cout<<prank<<": There are " << numNodesElemFlagged(root, &n_elem_flagged)<<" flagged nodes ";
+    std::cout<<"and " <<n_elem_flagged<<" elements\n";
+        
+    int n_elem_depthk =0 ;
+    std::cout<<prank<<": There are " << numNodesElemHeightK(root, DEPTH_DEF, &n_elem_depthk)<<"  nodes at depth "<< DEPTH_DEF;
+    std::cout<<"and " <<n_elem_depthk<<" elements\n";
+        
+    int n_elem_flagged_1 =0 ;
+    std::cout<<prank<<": There are " << numNodesHeightDepthFlag(root, &n_elem_flagged_1) <<" flagged nodes ";
+    std::cout<<"and " << n_elem_flagged_1<< " elements\n";
+    //////////
+
+    //MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    //particles_v.resize(count_part_local[prank]);
+    //MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
 /*
     std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
@@ -227,15 +277,16 @@ int main()
     //root contains the common tree; particles_v is a vector containing particles depending on the process; 
     
     //Compute the local tree starting from the common tree.
-    /*int index = 10000;
+  /*  int index = 10000;
     for(unsigned int i = 0; i < particles_v.size(); i++)
     {
         add_particle_locally(root, particles_v[i], prank, &index);
-    }*/
-    int ntmp= 0;
-    std::cout<<prank<<": PUUUUTEPUUUTEPUUUTE "<<numNodesHeightDepthFlag(root, &ntmp)<<" and "<<ntmp<<std::endl;
-    ntmp = 0;
-    std::cout<<prank<<": "<<numNodesHeightK_tmp(root, 4, &ntmp)<< " and " << ntmp<<std::endl;
+    }
+    
+    //int ntmp= 0;
+    //std::cout<<prank<<": PUUUUTEPUUUTEPUUUTE "<<numNodesHeightDepthFlag(root, &ntmp)<<" and "<<ntmp<<std::endl;
+    //ntmp = 0;
+   // std::cout<<prank<<": "<<numNodesHeightK_tmp(root, 4, &ntmp)<< " and " << ntmp<<std::endl;
     ////////////////////////////////////////////////////// 
     
     //Declaration of variables for the actual computation
@@ -257,11 +308,11 @@ int main()
     }
 
     std::vector<std::vector<MyParticle>> mat_particles_send(psize);
-    //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
+  */  //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
 
     
     //if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
-    for(int step = 0; step<1; step++)
+ /*   for(int step = 0; step<1; step++)
     {
         //Computation of forces 
         std::fill(fx.begin(), fx.end(), 0);
@@ -273,16 +324,16 @@ int main()
             {
                 //std::cout<<particles_v[i].node_index<<" "<<particles_v[i].proc_rank<<std::endl;
                 //if(compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send)==10) {std::cout<<"futaifutai"<<std::endl;}
-                std::cout<<prank<<": "<<compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send, 0)<<std::endl;
+                //compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send);
             }   
         }
-
-        for(int p = 0; p < psize; p++)
+*/
+        /*for(int p = 0; p < psize; p++)
         {
             mat_size_particles[prank][p] = mat_particles_send[p].size();
             std::cout<< mat_particles_send[p].size()<<" ";
         }
-        std::cout<<std::endl;
+        std::cout<<std::endl;*/
         /*MPI_Bcast(mat_size_particles[prank].data(), psize, MPI_INT, prank, MPI_COMM_WORLD);
     
         for(int j = 0; j < psize; j++)
@@ -326,7 +377,7 @@ int main()
             {ofile<<particles_v[i].x<<" "<<particles_v[i].y<<" "<<particles_v[i].z<<std::endl;}
             ofile<<step<<std::endl;
         }*/
-    }        
+    //}        
     //if(prank==0){ofile.close();}
 
     second elapsed = clk::now() - t0;
