@@ -207,64 +207,32 @@ int main()
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
-    std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
-    std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
+    //std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
+    //std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
     
     deSerialize(root, serializedNode_v);
-    std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    //std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
     MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
     particles_v.resize(count_part_local[prank]);
     MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
+/*
     std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
     std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
+    std::cout<<prank<<": The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+  */  
+    //root contains the common tree; particles_v is a vector containing particles depending on the process; 
     
+    //Compute the local tree starting from the common tree.
+    int index = 10000;
+    for(unsigned int i = 0; i < particles_v.size(); i++)
+    {
+        add_particle_locally(root, particles_v[i], prank, &index);
+    }
+
+    ////////////////////////////////////////////////////// 
     
-    /*
-    //n = root->elements;
-    std::cout<<"The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The particles vector has " << particles_v.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
-    
-
-
-    /////Tests/////
-    int depth = 5;
-
-    std::cout<<"There are "<<numNodesHeightK(root, depth)<<" nodes at depth "<<depth<<std::endl;
-    
-    std::vector<MyNode_val> serializedNode;
-    serialize(root, serializedNode, depth+1);
-    std::cout<<"The serialized node vector has " << serializedNode.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[0].index <<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[1].index <<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[2].index <<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[3].index <<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[5].index <<std::endl;
-    std::cout<<"The index of the serialized node vector " << serializedNode[30].index <<std::endl;
-    
-    MyNode *test_root = NULL;
-    deSerialize(test_root, serializedNode);
-
-    std::cout<<"There are "<<root->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<root->swb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<numNodesHeightK(root, 4)<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<numNodesHeightK(root, 5)<<" nodes at depth "<<depth<<std::endl;
-    
-
-    std::cout<<"There are "<<test_root->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<test_root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<test_root->swb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<test_root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<numNodesHeightK(test_root, 4)<<" nodes at depth "<<depth<<std::endl;
-    std::cout<<"There are "<<numNodesHeightK(test_root, 5)<<" nodes at depth "<<depth<<std::endl;
-    
-
-    //////////////////
-    */
-
     //Declaration of variables for the actual computation
     /*double fx = 0., fy = 0., fz = 0;
     double ax = 0., ay = 0., az = 0;
@@ -356,8 +324,8 @@ int main()
     second elapsed = clk::now() - t0;
 //    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<"for process "<<prank<<" from the total of "<<psize<<std::endl;
 //    std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"End of program"<< std::endl<<std::endl;
+    std::cout<<prank<<": The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": End of program"<< std::endl<<std::endl;
 
     MPI_Type_free(&MyParticle_mpi_t);
     MPI_Type_free(&MyNode_val_mpi_t);

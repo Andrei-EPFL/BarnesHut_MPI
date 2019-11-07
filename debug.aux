@@ -8,3 +8,42 @@
     if(root->swb->seb) {std::cout<<prank<<": The root has swbseb " << root->swb->seb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
     if(root->neb) {std::cout<<prank<<": The root has neb " << root->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
     if(root->swb->nwf) {std::cout<<prank<<": The root has swbnwf " << root->swb->nwf->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+
+
+
+/////Tests/////
+    int depth = 5;
+
+    std::cout<<"There are "<<numNodesHeightK(root, depth)<<" nodes at depth "<<depth<<std::endl;
+    
+    std::vector<MyNode_val> serializedNode;
+    serialize(root, serializedNode, depth+1);
+    std::cout<<"The serialized node vector has " << serializedNode.size() << " particles for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[0].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[1].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[2].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[3].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[5].index <<std::endl;
+    std::cout<<"The index of the serialized node vector " << serializedNode[30].index <<std::endl;
+    
+    MyNode *test_root = NULL;
+    deSerialize(test_root, serializedNode);
+
+    std::cout<<"There are "<<root->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->swb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(root, 4)<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(root, 5)<<" nodes at depth "<<depth<<std::endl;
+    
+
+    std::cout<<"There are "<<test_root->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->nwb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->swb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<test_root->swb->neb->elements<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(test_root, 4)<<" nodes at depth "<<depth<<std::endl;
+    std::cout<<"There are "<<numNodesHeightK(test_root, 5)<<" nodes at depth "<<depth<<std::endl;
+    
+
+    //////////////////
+    

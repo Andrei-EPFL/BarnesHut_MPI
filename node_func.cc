@@ -157,6 +157,17 @@ int numNodesHeightK(MyNode *root, int k, int *n)
     return numNodesHeightK(root->nwf, k-1, n) + numNodesHeightK(root->nef, k-1, n) + numNodesHeightK(root->swf, k-1, n) + numNodesHeightK(root->sef, k-1, n)+ numNodesHeightK(root->nwb, k-1, n) + numNodesHeightK(root->neb, k-1, n) + numNodesHeightK(root->swb, k-1, n) + numNodesHeightK(root->seb, k-1, n);
 }
 
+int numNodesHeightK_tmp(MyNode *root, int k, int *n)
+{
+    if(root == NULL) return 0; //if the tree is empty return 0
+    if(k == 0)
+    {
+        *n = *n+ root->elements;
+        return 1; //if k = 0, then the root is the only node to return 
+    }
+    return numNodesHeightK(root->nwf, k-1, n) + numNodesHeightK(root->nef, k-1, n) + numNodesHeightK(root->swf, k-1, n) + numNodesHeightK(root->sef, k-1, n)+ numNodesHeightK(root->nwb, k-1, n) + numNodesHeightK(root->neb, k-1, n) + numNodesHeightK(root->swb, k-1, n) + numNodesHeightK(root->seb, k-1, n);
+}
+
 void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes)
 {   
     if(root == NULL){std::cout<<"There is no root node\n";}

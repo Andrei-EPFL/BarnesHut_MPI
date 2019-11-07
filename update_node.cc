@@ -169,3 +169,50 @@ void add_particle(MyNode *node, MyParticle newparticle, double bound_min_x, doub
         }
     }
 }
+
+void add_particle_locally(MyNode *node, MyParticle newparticle, int prank, int *index)
+{
+    
+    if(!node)
+    {       
+        std::cout << "ERROR: This is odd!! The root should exists because it was broadcasted to every process\n";    
+    }
+    else
+    {
+        if(newparticle.outside == false)
+        {
+
+            if(newparticle.node_index != node->index)
+            {
+                if(node->nwf) {add_particle_locally(node->nwf, newparticle, prank, index);}
+                if(node->nef) {add_particle_locally(node->nef, newparticle, prank, index);}
+                if(node->swf) {add_particle_locally(node->swf, newparticle, prank, index);}
+                if(node->sef) {add_particle_locally(node->sef, newparticle, prank, index);}
+                if(node->nwb) {add_particle_locally(node->nwb, newparticle, prank, index);}
+                if(node->neb) {add_particle_locally(node->neb, newparticle, prank, index);}
+                if(node->swb) {add_particle_locally(node->swb, newparticle, prank, index);}
+                if(node->seb) {add_particle_locally(node->seb, newparticle, prank, index);}
+            }
+            else
+            {
+                if(node->depthflag==1 && node->elements>1)
+                {
+                    update_child_node(node, newparticle, node->bound_min_x, node->bound_max_x, node->bound_min_y, node->bound_max_y, node->bound_min_z, node->bound_max_z, index);
+                }
+                else 
+                
+                {
+                    if(node->depthflag==0){std::cout<<"ERROR: This should not have occured\n";}
+                    if(node->elements<=0){std::cout<<"ERROR: This should not have occured\n";}
+                    if(node->elements==1 && (node->COM_x != newparticle.x || node->COM_y != newparticle.y || node->COM_z != newparticle.z )){std::cout<<"ERROR: This should not have occured\n";}
+                }
+            }
+
+        }
+        else
+        {
+            //std::cout << "The particle is placed outside the boundaries\n";
+            //std::cout <<newparticle.outside<<std::endl;
+        }
+    }
+}
