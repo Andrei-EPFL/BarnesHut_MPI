@@ -1,0 +1,10 @@
+ //DEBUG temp. do not keep for long
+    std::cout<<prank<<": The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": The root has nwb " << root->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    if(root->swb->nwb) {std::cout<<prank<<": The root has swbnwb " << root->swb->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->swb->nef) {std::cout<<prank<<": The root has swbnef " << root->swb->nef->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->swb->neb) {std::cout<<prank<<": The root has swbneb " << root->swb->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->swb) {std::cout<<prank<<": The root has swb " << root->swb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->swb->seb) {std::cout<<prank<<": The root has swbseb " << root->swb->seb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->neb) {std::cout<<prank<<": The root has neb " << root->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
+    if(root->swb->nwf) {std::cout<<prank<<": The root has swbnwf " << root->swb->nwf->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}

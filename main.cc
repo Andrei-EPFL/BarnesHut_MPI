@@ -38,8 +38,9 @@ int main()
     
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //Creation of a new MPI data type related to the MyParticle struct
-    int blk_length[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint address[11];
+    const int n_elements = 10;
+    int blk_length[n_elements] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address[n_elements+1];
     MPI_Get_address(&tmpparticle[0], &address[0]);
     MPI_Get_address(&tmpparticle[0].x, &address[1]);
     MPI_Get_address(&tmpparticle[0].y, &address[2]);
@@ -52,18 +53,18 @@ int main()
     MPI_Get_address(&tmpparticle[0].proc_rank, &address[9]);
     MPI_Get_address(&tmpparticle[0].outside, &address[10]);
 
-    MPI_Aint displs[10];
-    for(int add = 0; add<10; add++)
+    MPI_Aint displs[n_elements];
+    for(int add = 0; add<n_elements; add++)
     {
         displs[add] = MPI_Aint_diff(address[add+1], address[0]);    
     }
     
-    MPI_Datatype types[10] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+    MPI_Datatype types[n_elements] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                              MPI_DOUBLE, MPI_INT, MPI_INT, MPI_CXX_BOOL};
 
     MPI_Datatype MyParticle_mpi_temp_t;
-    MPI_Type_create_struct(10, blk_length, displs, types, &MyParticle_mpi_temp_t);
+    MPI_Type_create_struct(n_elements, blk_length, displs, types, &MyParticle_mpi_temp_t);
     MPI_Datatype MyParticle_mpi_t;
 
     MPI_Aint extent, address_second;
@@ -73,8 +74,9 @@ int main()
     MPI_Type_commit(&MyParticle_mpi_t);
 
     //Creation of a new MPI data type related to MyNode_val struct;
-    int blk_length_node[25] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint address_node[26];
+    const int n_elements_node = 25;
+    int blk_length_node[n_elements_node] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint address_node[n_elements_node+1];
     MPI_Get_address(&tmpnodeval[0], &address_node[0]);
     MPI_Get_address(&tmpnodeval[0].elements, &address_node[1]);
     MPI_Get_address(&tmpnodeval[0].index, &address_node[2]);
@@ -102,13 +104,13 @@ int main()
     MPI_Get_address(&tmpnodeval[0].swb, &address_node[24]);
     MPI_Get_address(&tmpnodeval[0].seb, &address_node[25]);
     
-    MPI_Aint displs_node[25];
-    for(int add = 0; add<25; add++)
+    MPI_Aint displs_node[n_elements_node];
+    for(int add = 0; add<n_elements_node; add++)
     {
         displs_node[add] = MPI_Aint_diff(address_node[add+1], address_node[0]);    
     }
     
-    MPI_Datatype types_node[25] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, 
+    MPI_Datatype types_node[n_elements_node] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, 
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -117,7 +119,7 @@ int main()
                 MPI_CXX_BOOL, MPI_CXX_BOOL, MPI_CXX_BOOL, MPI_CXX_BOOL};
 
     MPI_Datatype MyNode_val_mpi_temp_t;
-    MPI_Type_create_struct(24, blk_length_node, displs_node, types_node, &MyNode_val_mpi_temp_t);
+    MPI_Type_create_struct(n_elements_node, blk_length_node, displs_node, types_node, &MyNode_val_mpi_temp_t);
     MPI_Datatype MyNode_val_mpi_t;
 
     MPI_Aint extent_node, address_second_node;
@@ -195,7 +197,7 @@ int main()
     }
 
     auto t1 = clk::now();
-    std::cout<<"The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
 
     MPI_Bcast(&n_serializednode, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (prank != 0)
@@ -205,31 +207,20 @@ int main()
     }
     MPI_Bcast(serializedNode_v.data(), serializedNode_v.size(), MyNode_val_mpi_t, 0, MPI_COMM_WORLD);
     
-    std::cout<<"The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
-    std::cout<<"The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
+    std::cout<<prank<<": The serialized node vector has " << n_serializednode << " elements for process "<<prank<<" from the total of "<<psize<<std::endl; 
+    std::cout<<prank<<": The serialized node vector has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;    
     
     deSerialize(root, serializedNode_v);
-    std::cout<<"The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": The serialized node vector after DeSerialization has " << serializedNode_v.size() << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
     
     MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
     particles_v.resize(count_part_local[prank]);
     MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
 
-    std::cout<<"The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
-    std::cout<<"The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
+    std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << count_part_local[prank] <<std::endl;    
+    std::cout<<prank<<": The number of particles for process "<<prank<<" from the total of "<<psize << " is = " << particles_v.size() <<std::endl;
     
-    //DEBUG temp. do not keep for long
-    /*std::cout<<"The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-    std::cout<<"The root has nwb " << root->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;
-    if(root->swb->nwb) {std::cout<<"The root has swbnwb " << root->swb->nwb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->swb->nef) {std::cout<<"The root has swbnef " << root->swb->nef->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->swb->neb) {std::cout<<"The root has swbneb " << root->swb->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->swb) {std::cout<<"The root has swb " << root->swb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->swb->seb) {std::cout<<"The root has swbseb " << root->swb->seb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->neb) {std::cout<<"The root has neb " << root->neb->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    if(root->swb->nwf) {std::cout<<"The root has swbnwf " << root->swb->nwf->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;}
-    */
-
+    
     /*
     //n = root->elements;
     std::cout<<"The root node has "<<root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;

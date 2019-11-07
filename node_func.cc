@@ -125,11 +125,11 @@ void deSerialize(MyNode *&node, std::vector<MyNode_val> &vect)
     //    std::cout<<"The vector is empty;\n"
     //} 
     // Else create node with this item and recur for children 
-    if(vect.size())
+    if(!vect.empty())
     {
-        MyNode_val local_node_val = vect[0];
+        MyNode_val local_node_val = *vect.begin();
         //std::cout<<"\n\nTrial "<<vect[0].elements<<"\n\n";
-        node = newNode(vect[0]);
+        node = newNode(*vect.begin());
         vect.erase(vect.begin()); 
         if(local_node_val.depthflag == 0)
         {
@@ -164,7 +164,8 @@ void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes)
     {   
         if(k == 0)
         {
-            *n_nodes = *n_nodes + 1;           
+            *n_nodes = *n_nodes + 1;
+            root->depthflag = 1;          
         }
         else
         {
@@ -179,6 +180,7 @@ void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes)
             if(root->nwf == NULL && root->nef == NULL && root->swf ==NULL && root->sef == NULL && root->nwb == NULL && root->neb == NULL && root->swb ==NULL && root->seb == NULL)
             {
                 *n_nodes = *n_nodes + 1;
+                root->depthflag = 1; 
             }
         }
     }
