@@ -135,11 +135,11 @@ int main()
     std::vector<int> displs_part_local = {0};
     std::vector<int> count_part_local;
     std::vector<MyParticle> particles_v_local;
-
+    std::ofstream ofile;
+        
     if(prank == 0)
     {
         std::ifstream infile;
-        std::ofstream ofile;
         int index_local = 0;
         int depth_local = 4;
         int ln_local = 0;
@@ -234,96 +234,71 @@ int main()
     ////////////////////////////////////////////////////// 
     
     //Declaration of variables for the actual computation
-    /*double fx = 0., fy = 0., fz = 0;
+    //const unsigned int MyN = particles_v.size();
+    std::vector<double> fx(particles_v.size());
+    std::vector<double> fy(particles_v.size());
+    std::vector<double> fz(particles_v.size());
+    
+    std::fill(fx.begin(), fx.end(), 0);
+    std::fill(fy.begin(), fy.end(), 0);
+    std::fill(fz.begin(), fz.end(), 0);
+
     double ax = 0., ay = 0., az = 0;
     float dt = 0.1;
 
-    auto ln = n/psize + (prank < n % psize ? 1 : 0);
-    auto i_start = prank * ln + (prank < n % psize ? 0 : n % psize);
-    auto i_end = i_start + ln;
-    int recvcounts[psize];
-    int displs_data[psize];
-    MyParticle particles[n], particles_out[n];
-    
-    for(int aux = 0; aux < n; aux ++)
-    {
-        particles[aux] = particles_v[aux];
-    }
-    
-    for(int c = 0; c<psize; c++)
-    {
-        recvcounts[c] = n/psize + (c < n % psize ? 1 : 0);
-        displs_data[c] = c * recvcounts[c] + (c < n % psize ? 0 : n % psize);
-        if(prank==0)
-        {
-            std::cout<<recvcounts[c]<< " " << displs_data[c]<<std::endl;
-        }  
-    }
-    
-    //Computation of new positions
     if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
-    for(int step = 0; step<1000; step++)
+    for(int step = 0; step<1; step++)
     {
-        fx = fy = fz = 0.;
-      
-        for(int i = i_start; i < i_end; i++)
+        //Computation of forces 
+        std::fill(fx.begin(), fx.end(), 0);
+        std::fill(fy.begin(), fy.end(), 0);
+        std::fill(fz.begin(), fz.end(), 0);     
+        for(unsigned int i = 0; i < particles_v.size(); i++)
         {
-            if(particles[i].outside == false)
+            if(particles_v[i].outside == false)
             {
-                compute_force(root, particles[i], &fx[i], &fy[i], &fz[i]);
+                compute_force(root, particles_v[i], &fx[i], &fy[i], &fz[i]);
             }   
         }
-        //do communications and finish the computation of forcea coming from other  nodes
-
-        for(int i = i_start; i < i_end; i++)
+       
+        //do communications and finish the computation of forces coming from nodes from other processes.
+    
+        //Computation of new positions
+        for(unsigned int i = 0; i < particles_v.size(); i++)
         {
-
-                ax = fx[i]/particles[i].mass;
-                ay = fy[i]/particles[i].mass;
-                az = fz[i]/particles[i].mass;
+            ax = fx[i]/particles_v[i].mass;
+            ay = fy[i]/particles_v[i].mass;
+            az = fz[i]/particles_v[i].mass;
                 
-                particles[i].vx += ax * dt;
-                particles[i].vy += ay * dt;
-                particles[i].vz += az * dt;
+            particles_v[i].vx += ax * dt;
+            particles_v[i].vy += ay * dt;
+            particles_v[i].vz += az * dt;
                 
-                particles[i].x += particles[i].vx * dt;
-                particles[i].y += particles[i].vy * dt;
-                particles[i].z += particles[i].vz * dt;
+            particles_v[i].x += particles_v[i].vx * dt;
+            particles_v[i].y += particles_v[i].vy * dt;
+            particles_v[i].z += particles_v[i].vz * dt;
 
-                if(particles[i].x < bound_min_x || particles[i].y < bound_min_y || particles[i].x > bound_max_x || particles[i].y > bound_max_y || particles[i].z > bound_max_z || particles[i].z < bound_min_z)
-                {
-                    particles[i].x = bound_min_x - 100; 
-                    particles[i].y = bound_min_y - 100;
-                    particles[i].z = bound_min_z - 100;
-                    particles[i].vx = particles[i].vy = particles[i].vz = particles[i].mass = 0;
-                    particles[i].outside = true;
-                }
+            if(particles_v[i].x < bound_min_x || particles_v[i].y < bound_min_y || particles_v[i].x > bound_max_x || particles_v[i].y > bound_max_y || particles_v[i].z > bound_max_z || particles_v[i].z < bound_min_z)
+            {
+                particles_v[i].x = bound_min_x - 100; 
+                particles_v[i].y = bound_min_y - 100;
+                particles_v[i].z = bound_min_z - 100;
+                particles_v[i].vx = particles_v[i].vy = particles_v[i].vz = particles_v[i].mass = 0;
+                particles_v[i].outside = true;
             }
-            fx = fy = fz = 0.;
         }
-        MPI_Gatherv(particles+i_start, ln, MyParticle_mpi_t, particles_out, recvcounts, displs_data, MyParticle_mpi_t, 0, MPI_COMM_WORLD );
         
-        for (int aux = 0; aux < n; aux++){particles[aux]=particles_out[aux];}
-        
-        MPI_Bcast(particles, n, MyParticle_mpi_t, 0, MPI_COMM_WORLD);
-        
-        free_node(root);
-        root = NULL;
-        if(prank==0){ofile<<particles[0].x<<" "<<particles[0].y<<" "<<particles[0].z<<std::endl;}    
-        root = initialize_node(particles[0], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
-        for(int p = 1; p < n; p++)
+        if(prank==0)
         {    
-            if(prank==0){ofile<<particles[p].x<<" "<<particles[p].y<<" "<<particles[p].z<<std::endl;}    
-            add_particle(root, particles[p], bound_min_x, bound_max_x, bound_min_y, bound_max_y, bound_min_z, bound_max_z);
+            for(unsigned int i = 0; i < particles_v.size(); i++)
+            {ofile<<particles_v[i].x<<" "<<particles_v[i].y<<" "<<particles_v[i].z<<std::endl;}
+            ofile<<step<<std::endl;
         }
-        if(prank==0){ofile<<step<<std::endl;}
-        
-    }
-    if(prank==0){ofile.close();}*/
+    }        
+    if(prank==0){ofile.close();}
 
     second elapsed = clk::now() - t0;
-//    std::cout<<"The remaining number of particles in the particles vector is= "<<n <<"for process "<<prank<<" from the total of "<<psize<<std::endl;
-//    std::cout<<"The number of particles in the tree is= "<<root->elements << "for process "<<prank<<" from the total of "<<psize<<std::endl;
+    std::cout<<prank<<": The remaining number of particles in the particles vector is= "<<particles_v.size() <<", for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<prank<<": The large loop with steps takes "<<elapsed.count() << " seconds for process "<<prank<<" from the total of "<<psize<<std::endl;
     std::cout<<prank<<": End of program"<< std::endl<<std::endl;
 
