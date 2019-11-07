@@ -10,3 +10,4 @@ int numNodesHeightK_tmp(MyNode *root, int k, int *n);
 void numNodeDepthKandLeaves(MyNode *root, int k, int *n_nodes);
 void linkParticlesNodepRank(MyNode *root, int k, std::vector<MyParticle> &particles, int p, int *ln, unsigned int *n_nodes);
 bool compareByprank(const MyParticle &a, const MyParticle &b);
+int numNodesHeightDepthFlag(MyNode *root, int *n);

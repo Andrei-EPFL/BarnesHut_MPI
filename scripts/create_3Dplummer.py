@@ -161,22 +161,22 @@ def main():
     #Npart, a, m=1., G=4.04e-11, seed=None
     bodies = plummer(500, 5, m=1e10, seed=10)
 
-    bodies[:,0:3] = bodies[:,0:3] + np.array([150, 150, 150])
+    bodies[:,0:3] = bodies[:,0:3] + np.array([250, 250, 250])
     
     print(np.array(bodies).shape)
-    f = open("disk.txt", "w")
+    f = open("./input/disk.txt", "w")
     
     for b in bodies:
         for c in b:
             f.write(str(c) + " ")
         f.write(str(1e10)+" \n")
     
-    bodies[:,0:3] = bodies[:,0:3] + np.array([50, 50, 50])
+    #bodies[:,0:3] = bodies[:,0:3] + np.array([50, 50, 50])
     
-    for b in bodies:
-        for c in b:
-            f.write(str(c) + " ")
-        f.write(str(1e10)+" \n")
+    #for b in bodies:
+    #    for c in b:
+    #        f.write(str(c) + " ")
+    #    f.write(str(1e10)+" \n")
 
 if __name__== '__main__':
     main()

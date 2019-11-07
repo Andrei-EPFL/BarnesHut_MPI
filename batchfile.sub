@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH -N 1
-#SBATCH -n 8
+#SBATCH -n 9
 #SBATCH -c 1
 #SBATCH --time 00:05:00
 #SBATCH -A phys-743

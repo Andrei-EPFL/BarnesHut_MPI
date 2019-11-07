@@ -14,6 +14,8 @@ using second = std::chrono::duration<double>;
 using time_point = std::chrono::time_point<clk>;
 
 #include <mpi.h>
+
+#define DEPTH_DEF 3
 int main()
 {
     MPI_Init(NULL, NULL);
@@ -141,7 +143,7 @@ int main()
     {
         std::ifstream infile;
         int index_local = 0;
-        int depth_local = 4;
+        int depth_local = DEPTH_DEF;
         int ln_local = 0;
         int n_nodes_depth_k_leaves = 0;
 
@@ -225,16 +227,18 @@ int main()
     //root contains the common tree; particles_v is a vector containing particles depending on the process; 
     
     //Compute the local tree starting from the common tree.
-    int index = 10000;
+    /*int index = 10000;
     for(unsigned int i = 0; i < particles_v.size(); i++)
     {
         add_particle_locally(root, particles_v[i], prank, &index);
-    }
-
+    }*/
+    int ntmp= 0;
+    std::cout<<prank<<": PUUUUTEPUUUTEPUUUTE "<<numNodesHeightDepthFlag(root, &ntmp)<<" and "<<ntmp<<std::endl;
+    ntmp = 0;
+    std::cout<<prank<<": "<<numNodesHeightK_tmp(root, 4, &ntmp)<< " and " << ntmp<<std::endl;
     ////////////////////////////////////////////////////// 
     
     //Declaration of variables for the actual computation
-    //const unsigned int MyN = particles_v.size();
     std::vector<double> fx(particles_v.size());
     std::vector<double> fy(particles_v.size());
     std::vector<double> fz(particles_v.size());
@@ -246,7 +250,17 @@ int main()
     double ax = 0., ay = 0., az = 0;
     float dt = 0.1;
 
-    if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
+    std::vector<std::vector<int>> mat_size_particles(psize);
+    for(unsigned i = 0; i < mat_size_particles.size(); i++)
+    {
+        mat_size_particles[i].resize(psize);
+    }
+
+    std::vector<std::vector<MyParticle>> mat_particles_send(psize);
+    //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
+
+    
+    //if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
     for(int step = 0; step<1; step++)
     {
         //Computation of forces 
@@ -257,14 +271,32 @@ int main()
         {
             if(particles_v[i].outside == false)
             {
-                compute_force(root, particles_v[i], &fx[i], &fy[i], &fz[i]);
+                //std::cout<<particles_v[i].node_index<<" "<<particles_v[i].proc_rank<<std::endl;
+                //if(compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send)==10) {std::cout<<"futaifutai"<<std::endl;}
+                std::cout<<prank<<": "<<compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send, 0)<<std::endl;
             }   
         }
-       
+
+        for(int p = 0; p < psize; p++)
+        {
+            mat_size_particles[prank][p] = mat_particles_send[p].size();
+            std::cout<< mat_particles_send[p].size()<<" ";
+        }
+        std::cout<<std::endl;
+        /*MPI_Bcast(mat_size_particles[prank].data(), psize, MPI_INT, prank, MPI_COMM_WORLD);
+    
+        for(int j = 0; j < psize; j++)
+        {        
+            for(int p = 0; p < psize; p++)
+            {
+                std::cout<<mat_size_particles[j][p]<<" ";
+            }
+            std::cout<<std::endl;
+        }*/
         //do communications and finish the computation of forces coming from nodes from other processes.
     
         //Computation of new positions
-        for(unsigned int i = 0; i < particles_v.size(); i++)
+        /*for(unsigned int i = 0; i < particles_v.size(); i++)
         {
             ax = fx[i]/particles_v[i].mass;
             ay = fy[i]/particles_v[i].mass;
@@ -293,9 +325,9 @@ int main()
             for(unsigned int i = 0; i < particles_v.size(); i++)
             {ofile<<particles_v[i].x<<" "<<particles_v[i].y<<" "<<particles_v[i].z<<std::endl;}
             ofile<<step<<std::endl;
-        }
+        }*/
     }        
-    if(prank==0){ofile.close();}
+    //if(prank==0){ofile.close();}
 
     second elapsed = clk::now() - t0;
     std::cout<<prank<<": The remaining number of particles in the particles vector is= "<<particles_v.size() <<", for process "<<prank<<" from the total of "<<psize<<std::endl;
