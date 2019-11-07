@@ -25,8 +25,17 @@ if(node->depthflag == 1)
             {
                 std::cout<<"The flag of the node is "<<node->depthflag<<std::endl;
             }
-
-
+//debuggin for computation of sizes
+for(int j = 0; j < psize; j++)
+        {   
+            std::cout<<"prank="<<prank<<"-"<<psize<<": The array with the numbers of particles that process "<<j<<" has to send to the other proc: ";                  
+            for(int p = 0; p < psize; p++)
+            {
+                std::cout<<mat_size_particles[j][p] << " ";
+            }
+            std::cout<<std::endl;
+        }
+        
 
  //DEBUG temp. do not keep for long
     std::cout<<prank<<": The root main has " << root->elements << " elements for process "<<prank<<" from the total of "<<psize<<std::endl;

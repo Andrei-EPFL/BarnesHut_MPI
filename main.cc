@@ -280,8 +280,17 @@ int main()
     std::vector<std::vector<MyParticle>> mat_particles_send(psize);
     //std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
 
+    std::vector<int> counts_size_recv(psize);
+    std::fill(counts_size_recv.begin(), counts_size_recv.end(), psize);
+
+    std::vector<int> displacements_size(psize);
+    for(unsigned i = 0; i < displacements_size.size(); i++)
+    {displacements_size[i]= psize*i;}
+    std::vector<int> sizes_recv(psize*psize);
     
-    //if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
+
+    ////// The begining of the main computational part
+    if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
     for(int step = 0; step<1; step++)
     {
         //Computation of forces 
@@ -292,56 +301,45 @@ int main()
         {
             if(particles_v[i].outside == false)
             {
-                //std::cout<<particles_v[i].node_index<<" "<<particles_v[i].proc_rank<<std::endl;
-                //if(compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send)==10) {std::cout<<"futaifutai"<<std::endl;}
                 compute_force_partially(root, particles_v[i], &fx[i], &fy[i], &fz[i], mat_particles_send);
             }   
         }
-
-        std::cout<<"prank="<<prank<<"-"<<psize<<": The array with the numbers of particles that process "<<prank<<" has to send to the other proc: ";
+        ////Sending to everyone the sizes that they expect to get and send.
         for(int p = 0; p < psize; p++)
         {
             mat_size_particles[prank][p] = mat_particles_send[p].size();
-            std::cout<< mat_particles_send[p].size()<<" ";
         }
-        //std::cout<<std::endl;
         
-        //MPI_Bcast(mat_size_particles[p].data(), psize, MPI_INT, prank, MPI_COMM_WORLD);
-        
-        //int *ptr = new int [psize][psize];
-        //MPI_Type_vector(psize, psize, psize, MPI_INT, &MyVector_mpi_t);
-        //MPI_Type_commit(&MyVector_mpi_t);
-        
-        std::vector<int> recvcount(psize);
-        std::vector<int> displacements(psize);
-        for(unsigned i = 0; i < displacements.size(); i++)
-        {displacements[i]= psize*i;}
-
-        std::fill(recvcount.begin(), recvcount.end(), psize);
-        
-        std::vector<int> mat_recv(psize*psize);
-
-        MPI_GATHERV(mat_size_particles[prank].data(), mat_size_particles[prank].size(), MPI_INT, mat_recv.data(), *recvcount.data(), *displacements.data(), MPI_INT, 0, MPI_COMM_WORLD);
-
-        /*
-        std::cout<<"prank="<<prank<<"-"<<psize<<": The pointer "<<prank<<" has to send to the other proc: ";
-        for(int p = 0; p < psize; p++)
-        {
-            std::cout<< ptr[p] << " ";
-        //    std::cout<< mat_particles_send[p].size()<<" ";
-        }*/
-
-        /*for(int j = 0; j < psize; j++)
+        MPI_Gatherv(mat_size_particles[prank].data(), mat_size_particles[prank].size(), MPI_INT, sizes_recv.data(), counts_size_recv.data(), displacements_size.data(), MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(sizes_recv.data(), sizes_recv.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    
+        for(int j = 0; j < psize; j++)
         { 
-            std::cout<<"prank="<<prank<<"-"<<psize<<": The array with the numbers of particles that process "<<j<<" has to send to the other proc: ";      
             for(int p = 0; p < psize; p++)
             {
-                std::cout<<mat_size_particles[j][p]<<" ";
+                mat_size_particles[j][p] = sizes_recv[j*psize+p];
             }
-            std::cout<<std::endl;
-        }*/
-        //do communications and finish the computation of forces coming from nodes from other processes.
-    
+        }
+        ////
+
+/*
+        for (int p = 0 ; p < psize -1; ++p) 
+        {
+            MPI_Isend(&send, 1, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, &request_send);
+            MPI_Recv(&recv, 1, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            sum += recv;
+
+            MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+
+            send = recv;
+        }
+*/
+
+
+
+
+
         //Computation of new positions
         /*for(unsigned int i = 0; i < particles_v.size(); i++)
         {
@@ -374,7 +372,8 @@ int main()
             ofile<<step<<std::endl;
         }*/
     }        
-    //if(prank==0){ofile.close();}
+    if(prank==0){ofile.close();}
+    ////// The ending of the main computational part
 
     second elapsed = clk::now() - t0;
     std::cout<<"prank="<<prank<<"-"<<psize<<": The remaining number of particles in the particles vector is= "<<particles_v.size() << std::endl;
