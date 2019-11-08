@@ -16,7 +16,7 @@ using time_point = std::chrono::time_point<clk>;
 
 #include <mpi.h>
 
-#define DEPTH_DEF 3
+#define DEPTH_DEF 5
 int main()
 {
     MPI_Init(NULL, NULL);
@@ -336,9 +336,9 @@ int main()
             for(int p = 0; p < psize; p++)
             {
                 mat_size_particles[j][p] = sizes_recv[j*psize+p];
-                std::cout<<mat_size_particles[j][p]<<" ";
+                //std::cout<<mat_size_particles[j][p]<<" ";
             }
-            std::cout<<std::endl;
+            //std::cout<<std::endl;
         }
         ////
         ////Transfer of particles

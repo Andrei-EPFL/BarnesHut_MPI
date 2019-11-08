@@ -1,0 +1,14 @@
+The number of nodes per process: 9 
+
+
+The final number of nodes in the root tree (the whole tree) is 774
+The root node has 500 elements for process 0 from the total of 1
+The particles vector has 500 particles for process 0 from the total of 1
+There are 9 nodes and leaves at depth 3
+The serialized node vector has 26 nodes for process 0 from the total of 1
+
+prank=0-1: The first creation of the tree took 0.0053281 seconds
+prank=0-1: The remaining number of particles in the particles vector is= 500
+prank=0-1: The large loop with steps takes 52.4813 seconds
+prank=0-1: End of program
+

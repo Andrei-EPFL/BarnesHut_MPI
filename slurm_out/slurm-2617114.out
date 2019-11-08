@@ -1,0 +1,39 @@
+prank=1-6: The first creation of the tree took 2.832e-05 seconds
+prank=2-6: The first creation of the tree took 2.6047e-05 seconds
+prank=3-6: The first creation of the tree took 1.7306e-05 seconds
+prank=4-6: The first creation of the tree took 1.7257e-05 seconds
+prank=5-6: The first creation of the tree took 1.6438e-05 seconds
+The number of nodes per process: 2 2 2 1 1 1 
+
+
+The final number of nodes in the root tree (the whole tree) is 774
+The root node has 500 elements for process 0 from the total of 6
+The particles vector has 500 particles for process 0 from the total of 6
+There are 9 nodes and leaves at depth 3
+The serialized node vector has 26 nodes for process 0 from the total of 6
+
+prank=0-6: The first creation of the tree took 0.00769184 seconds
+prank=1-6: The remaining number of particles in the particles vector is= 115
+prank=1-6: The large loop with steps takes 27.8752 seconds
+prank=1-6: End of program
+
+prank=2-6: The remaining number of particles in the particles vector is= 58
+prank=2-6: The large loop with steps takes 27.8746 seconds
+prank=2-6: End of program
+
+prank=5-6: The remaining number of particles in the particles vector is= 63
+prank=5-6: The large loop with steps takes 27.8727 seconds
+prank=5-6: End of program
+
+prank=3-6: The remaining number of particles in the particles vector is= 61
+prank=3-6: The large loop with steps takes 27.874 seconds
+prank=3-6: End of program
+
+prank=4-6: The remaining number of particles in the particles vector is= 66
+prank=4-6: The large loop with steps takes 27.8757 seconds
+prank=4-6: End of program
+
+prank=0-6: The remaining number of particles in the particles vector is= 137
+prank=0-6: The large loop with steps takes 27.9939 seconds
+prank=0-6: End of program
+

@@ -1,0 +1,79 @@
+prank=1-14: The first creation of the tree took 3.0089e-05 seconds
+prank=2-14: The first creation of the tree took 1.7953e-05 seconds
+prank=3-14: The first creation of the tree took 1.6192e-05 seconds
+prank=4-14: The first creation of the tree took 1.792e-05 seconds
+prank=5-14: The first creation of the tree took 2.1398e-05 seconds
+prank=6-14: The first creation of the tree took 1.9835e-05 seconds
+prank=7-14: The first creation of the tree took 1.5613e-05 seconds
+prank=8-14: The first creation of the tree took 2.7063e-05 seconds
+prank=9-14: The first creation of the tree took 1.8937e-05 seconds
+prank=10-14: The first creation of the tree took 1.5399e-05 seconds
+prank=11-14: The first creation of the tree took 3.3327e-05 seconds
+prank=12-14: The first creation of the tree took 2.5301e-05 seconds
+prank=13-14: The first creation of the tree took 2.5655e-05 seconds
+The number of nodes per process: 4 4 3 3 3 3 3 3 3 3 3 3 3 3 
+
+
+The final number of nodes in the root tree (the whole tree) is 774
+The root node has 500 elements for process 0 from the total of 14
+The particles vector has 500 particles for process 0 from the total of 14
+There are 44 nodes and leaves at depth 5
+The serialized node vector has 78 nodes for process 0 from the total of 14
+
+prank=0-14: The first creation of the tree took 0.00646439 seconds
+prank=7-14: The remaining number of particles in the particles vector is= 3
+prank=7-14: The large loop with steps takes 11.3192 seconds
+prank=7-14: End of program
+
+prank=11-14: The remaining number of particles in the particles vector is= 3
+prank=11-14: The large loop with steps takes 11.3242 seconds
+prank=11-14: End of program
+
+prank=9-14: The remaining number of particles in the particles vector is= 4
+prank=9-14: The large loop with steps takes 11.3259 seconds
+prank=9-14: End of program
+prank=1-14: The remaining number of particles in the particles vector is= 132
+prank=1-14: The large loop with steps takes 11.3312 seconds
+prank=2-14: The remaining number of particles in the particles vector is= 5
+prank=2-14: The large loop with steps takes 11.3307 seconds
+prank=2-14: End of program
+
+prank=4-14: The remaining number of particles in the particles vector is= 57
+prank=4-14: The large loop with steps takes 11.3294 seconds
+prank=4-14: End of program
+
+prank=5-14: The remaining number of particles in the particles vector is= 3
+prank=5-14: The large loop with steps takes 11.3287 seconds
+prank=5-14: End of program
+
+prank=6-14: The remaining number of particles in the particles vector is= 54
+prank=6-14: The large loop with steps takes 11.3281 seconds
+prank=6-14: End of program
+
+
+prank=1-14: End of program
+
+prank=8-14: The remaining number of particles in the particles vector is= 57
+prank=8-14: The large loop with steps takes 11.3267 seconds
+prank=8-14: End of program
+
+prank=10-14: The remaining number of particles in the particles vector is= 62
+prank=10-14: The large loop with steps takes 11.3252 seconds
+prank=10-14: End of program
+
+prank=12-14: The remaining number of particles in the particles vector is= 59
+prank=12-14: The large loop with steps takes 11.3234 seconds
+prank=12-14: End of program
+
+prank=13-14: The remaining number of particles in the particles vector is= 4
+prank=13-14: The large loop with steps takes 11.3223 seconds
+prank=13-14: End of program
+
+prank=3-14: The remaining number of particles in the particles vector is= 53
+prank=3-14: The large loop with steps takes 11.3302 seconds
+prank=3-14: End of program
+
+prank=0-14: The remaining number of particles in the particles vector is= 4
+prank=0-14: The large loop with steps takes 11.345 seconds
+prank=0-14: End of program
+
