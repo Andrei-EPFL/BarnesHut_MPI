@@ -268,13 +268,13 @@ int main()
     std::fill(fy.begin(), fy.end(), 0);
     std::fill(fz.begin(), fz.end(), 0);
 
-    std::vector<double> fx_send;
-    std::vector<double> fy_send;
-    std::vector<double> fz_send;
+    std::vector<std::vector<double>> fx_send(psize);
+    std::vector<std::vector<double>> fy_send(psize);
+    std::vector<std::vector<double>> fz_send(psize);
     
-    std::vector<double> fx_recv;
-    std::vector<double> fy_recv;
-    std::vector<double> fz_recv;
+    std::vector<std::vector<double>> fx_recv(psize);
+    std::vector<std::vector<double>> fy_recv(psize);
+    std::vector<std::vector<double>> fz_recv(psize);
     
     //double ax = 0., ay = 0., az = 0;
     //float dt = 0.1;
@@ -301,9 +301,10 @@ int main()
     MPI_Request request_send_part_1;
     MPI_Request request_recv_part_1;
         
-    //MPI_Request request_send_force[psize];
-    //MPI_Request request_recv_force[psize];
-    
+    std::vector<MPI_Request> request_send_force;
+    std::vector<MPI_Request> request_recv_force;
+    MPI_Request request_send_force_1;
+    MPI_Request request_recv_force_1;
 
     ////// The begining of the main computational part
     if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
@@ -367,42 +368,149 @@ int main()
         std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv<<std::endl;
         std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send<<std::endl;
 
-        
         MPI_Waitall(request_send_part.size(), request_send_part.data(), MPI_STATUSES_IGNORE);
         MPI_Waitall(request_recv_part.size(), request_recv_part.data(), MPI_STATUSES_IGNORE);
-        
-
-
-        
-        /*for (int p = 0; p < psize; p++)
+        ////
+        ////Computation of forces for the received particles;
+        ////
+        for (int p = 0; p < psize; p++)
         {
             if(p!=prank && mat_size_particles[p][prank]!=0)
             {
-                
-                
+                fx_send[p].resize(mat_particles_recv[p].size());
+                fy_send[p].resize(mat_particles_recv[p].size());
+                fz_send[p].resize(mat_particles_recv[p].size());
+
                 for(unsigned int i = 0; i < mat_particles_recv[p].size(); i++)
                 {
-                    std::fill(fx_send.begin(), fx_send.end(), 0);
-                    std::fill(fx_send.begin(), fx_send.end(), 0);
-                    std::fill(fx_send.begin(), fx_send.end(), 0);
+                    std::fill(fx_send[p].begin(), fx_send[p].end(), 0);
+                    std::fill(fy_send[p].begin(), fy_send[p].end(), 0);
+                    std::fill(fz_send[p].begin(), fz_send[p].end(), 0);
                     if(mat_particles_recv[p][i].outside == false)
                     {
-                        compute_force(root, mat_particles_recv[p][i], &fx[i], &fy[i], &fz[i]);
+                        compute_force(root, mat_particles_recv[p][i], &fx_send[p][i], &fy_send[p][i], &fz_send[p][i]);
                     }   
                 }
-                
+            }            
+        }
+        ////
+        ////Transfer of forces
+        ////
+        //// fx
+        int n_send_fx = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            if(p!=prank && mat_size_particles[p][prank]!=0)
+            {   
+                n_send_fx++;
+                MPI_Isend(fx_send[p].data(), mat_size_particles[p][prank], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_send_force_1);  
+                request_send_force.push_back(request_send_force_1);                
             }
+        }
+
+        int n_recv_fx = 0;
+        for(int p = 0; p < psize; p++)
+        {
             if(p!=prank && mat_size_particles[prank][p]!=0)
             {
-                
+                n_recv_fx++;
+                fx_recv[p].resize(mat_size_particles[prank][p]);
+                MPI_Irecv(fx_recv[p].data(), mat_size_particles[prank][p], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_recv_force_1);
+                request_recv_force.push_back(request_recv_force_1);
             }
-            
-        }*/
+        }
+        
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fx<<std::endl;
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fx<<std::endl;
 
+        MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
+        MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
 
+        //// fy
+        int n_send_fy = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            if(p!=prank && mat_size_particles[p][prank]!=0)
+            {   
+                n_send_fy++;
+                MPI_Isend(fy_send[p].data(), mat_size_particles[p][prank], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_send_force_1);  
+                request_send_force.push_back(request_send_force_1);                
+            }
+        }
 
+        int n_recv_fy = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            if(p!=prank && mat_size_particles[prank][p]!=0)
+            {
+                n_recv_fy++;
+                fy_recv[p].resize(mat_size_particles[prank][p]);
+                MPI_Irecv(fy_recv[p].data(), mat_size_particles[prank][p], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_recv_force_1);
+                request_recv_force.push_back(request_recv_force_1);
+            }
+        }
+        
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fy<<std::endl;
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fy<<std::endl;
 
+        MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
+        MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
 
+        //// fz
+        int n_send_fz = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            if(p!=prank && mat_size_particles[p][prank]!=0)
+            {   
+                n_send_fz++;
+                MPI_Isend(fz_send[p].data(), mat_size_particles[p][prank], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_send_force_1);  
+                request_send_force.push_back(request_send_force_1);                
+            }
+        }
+
+        int n_recv_fz = 0;
+        for(int p = 0; p < psize; p++)
+        {
+            if(p!=prank && mat_size_particles[prank][p]!=0)
+            {
+                n_recv_fz++;
+                fz_recv[p].resize(mat_size_particles[prank][p]);
+                MPI_Irecv(fz_recv[p].data(), mat_size_particles[prank][p], MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &request_recv_force_1);
+                request_recv_force.push_back(request_recv_force_1);
+            }
+        }
+        
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fz<<std::endl;
+        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fz<<std::endl;
+
+        MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
+        MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
+        
+        /// Computation of the total force;
+        for(unsigned int i = 0; i < particles_v.size(); i++)
+        {
+            if(particles_v[i].outside == false)
+            {
+                double fx_tmp = 0.;
+                double fy_tmp = 0.;
+                double fz_tmp = 0.;
+                
+                for(int p = 0; p < psize; p++)
+                {
+                    fx_tmp+= fx_recv[p][i];
+                    fy_tmp+= fy_recv[p][i];
+                    fz_tmp+= fz_recv[p][i];
+                }
+                fx[i]+= fx_tmp;
+                fy[i]+= fy_tmp;
+                fz[i]+= fz_tmp;
+            }   
+        std::cout<<"THE FORCES at step= "<<step<< " for particle " <<i<< " are "<<fx[i]<<" "<<fy[i]<<" "<<fz[i]<<std::endl;
+        }
+
+        
+        //////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////
         //Computation of new positions
         /*for(unsigned int i = 0; i < particles_v.size(); i++)
         {
