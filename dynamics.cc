@@ -2,7 +2,7 @@
 #include <cmath>
 #include <vector>
 #include "dynamics.h"
-#define THETA_DEF 0.01
+#define THETA_DEF 0.5
 
 int compute_force(MyNode *node, MyParticle particle, double *fx, double *fy, double *fz)
 {

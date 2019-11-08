@@ -276,15 +276,14 @@ int main()
     std::vector<std::vector<double>> fy_recv(psize);
     std::vector<std::vector<double>> fz_recv(psize);
     
-    //double ax = 0., ay = 0., az = 0;
-    //float dt = 0.1;
+    double ax = 0., ay = 0., az = 0;
+    float dt = 0.01;
 
     std::vector<std::vector<int>> mat_size_particles(psize);
     for(unsigned i = 0; i < mat_size_particles.size(); i++)
     {
         mat_size_particles[i].resize(psize);
     }
-
     std::vector<std::vector<MyParticle>> mat_particles_send(psize);
     std::vector<std::vector<MyParticle>> mat_particles_recv(psize);
 
@@ -308,12 +307,13 @@ int main()
 
     ////// The begining of the main computational part
     if(prank==0){ofile.open("./output/diskout.txt", std::ios::out);}
-    for(int step = 0; step<1; step++)
+    for(int step = 0; step<1000; step++)
     {
         //Computation of forces 
         std::fill(fx.begin(), fx.end(), 0);
         std::fill(fy.begin(), fy.end(), 0);
-        std::fill(fz.begin(), fz.end(), 0);     
+        std::fill(fz.begin(), fz.end(), 0);
+        for(int p = 0; p < psize; p++) {mat_particles_send[p].clear(); mat_particles_send[p].resize(0);}  
         for(unsigned int i = 0; i < particles_v.size(); i++)
         {
             if(particles_v[i].outside == false)
@@ -322,6 +322,7 @@ int main()
             }   
         }
         ////Sending to everyone the sizes that they expect to get and send.
+        for(int p = 0; p < psize; p++) {mat_size_particles[p].clear();mat_size_particles[p].resize(psize);}
         for(int p = 0; p < psize; p++)
         {
             mat_size_particles[prank][p] = mat_particles_send[p].size();
@@ -365,8 +366,8 @@ int main()
             }
         }
         
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv<<std::endl;
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send<<std::endl;
 
         MPI_Waitall(request_send_part.size(), request_send_part.data(), MPI_STATUSES_IGNORE);
         MPI_Waitall(request_recv_part.size(), request_recv_part.data(), MPI_STATUSES_IGNORE);
@@ -420,8 +421,8 @@ int main()
             }
         }
         
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fx<<std::endl;
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fx<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fx<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fx<<std::endl;
 
         MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
         MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
@@ -450,8 +451,8 @@ int main()
             }
         }
         
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fy<<std::endl;
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fy<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fy<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fy<<std::endl;
 
         MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
         MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
@@ -480,8 +481,8 @@ int main()
             }
         }
         
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fz<<std::endl;
-        std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fz<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_recv-"<<n_recv_fz<<std::endl;
+        //std::cout<<"prank="<<prank<<"-"<<psize<<": n_send-"<<n_send_fz<<std::endl;
 
         MPI_Waitall(request_send_force.size(), request_send_force.data(), MPI_STATUSES_IGNORE);
         MPI_Waitall(request_recv_force.size(), request_recv_force.data(), MPI_STATUSES_IGNORE);
@@ -508,14 +509,14 @@ int main()
                 fy[i]+= fy_tmp;
                 fz[i]+= fz_tmp;
             }   
-        std::cout<<"THE FORCES at step= "<<step<< " for particle " <<i<< " are "<<fx[i]<<" "<<fy[i]<<" "<<fz[i]<<std::endl;
+        //std::cout<<"THE FORCES at step= "<<step<< " for particle " <<i<< " are "<<fx[i]<<" "<<fy[i]<<" "<<fz[i]<<std::endl;
         }
 
         
         //////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////
         //Computation of new positions
-        /*for(unsigned int i = 0; i < particles_v.size(); i++)
+        for(unsigned int i = 0; i < particles_v.size(); i++)
         {
             ax = fx[i]/particles_v[i].mass;
             ay = fy[i]/particles_v[i].mass;
@@ -544,12 +545,12 @@ int main()
             for(unsigned int i = 0; i < particles_v.size(); i++)
             {ofile<<particles_v[i].x<<" "<<particles_v[i].y<<" "<<particles_v[i].z<<std::endl;}
             ofile<<step<<std::endl;
-        }*/
+        }
     }        
     if(prank==0){ofile.close();}
     ////// The ending of the main computational part
 
-    second elapsed = clk::now() - t0;
+    second elapsed = clk::now() - t1;
     std::cout<<"prank="<<prank<<"-"<<psize<<": The remaining number of particles in the particles vector is= "<<particles_v.size() << std::endl;
     std::cout<<"prank="<<prank<<"-"<<psize<<": The large loop with steps takes "<<elapsed.count() << " seconds"<<std::endl;
     std::cout<<"prank="<<prank<<"-"<<psize<<": End of program"<< std::endl<<std::endl;
