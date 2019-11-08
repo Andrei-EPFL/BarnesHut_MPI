@@ -497,9 +497,12 @@ int main()
                 
                 for(int p = 0; p < psize; p++)
                 {
-                    fx_tmp+= fx_recv[p][i];
-                    fy_tmp+= fy_recv[p][i];
-                    fz_tmp+= fz_recv[p][i];
+                    if(p!=prank && mat_size_particles[prank][p]!=0)
+                    {
+                        fx_tmp+= fx_recv[p][i];
+                        fy_tmp+= fy_recv[p][i];
+                        fz_tmp+= fz_recv[p][i];
+                    }
                 }
                 fx[i]+= fx_tmp;
                 fy[i]+= fy_tmp;
