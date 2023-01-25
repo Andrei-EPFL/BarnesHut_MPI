@@ -1,0 +1,26 @@
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+srun: error: node218: tasks 0-7: Exited with exit code 2
+srun: error: node228: tasks 8-23: Exited with exit code 2

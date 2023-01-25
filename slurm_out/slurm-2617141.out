@@ -1,0 +1,15 @@
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+slurmstepd: error: execve(): /home/epfl/variu/parallel_prog/./main: No such file or directory
+srun: error: node218: tasks 16-23: Exited with exit code 2
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: got SIGCONT
+slurmstepd: error: *** JOB 2617141 ON node203 CANCELLED AT 2019-11-08T10:25:28 ***
+slurmstepd: error: *** STEP 2617141.0 ON node203 CANCELLED AT 2019-11-08T10:25:28 ***
+srun: forcing job termination
+srun: error: node203: tasks 0-15: Terminated

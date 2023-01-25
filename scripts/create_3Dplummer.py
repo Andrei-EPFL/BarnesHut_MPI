@@ -159,7 +159,7 @@ def circVel_Plummer(r, M, a, G, rand=np.random):
 
 def main():
     #Npart, a, m=1., G=4.04e-11, seed=None
-    bodies = plummer(500, 5, m=1e10, seed=10)
+    bodies = plummer(4000, 5, m=1e10, seed=10)
 
     bodies[:,0:3] = bodies[:,0:3] + np.array([250, 250, 250])
     

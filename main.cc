@@ -132,8 +132,8 @@ int main()
     MPI_Type_commit(&MyNode_val_mpi_t);
     ////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
     auto t0 = clk::now();
+    
     
     std::vector<int> displs_part_local = {0};
     std::vector<int> count_part_local;
@@ -221,9 +221,7 @@ int main()
     /////// END OF MOST OF THE SEQUENTIAL PART
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    auto t1 = clk::now();
-    std::cout<<"prank="<<prank<<"-"<<psize<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
-
+    
     //// Send a global tree to everyone.
     MPI_Bcast(&n_serializednode, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (prank != 0)
@@ -244,6 +242,8 @@ int main()
     MPI_Bcast(count_part_local.data(), count_part_local.size(), MPI_INT, 0, MPI_COMM_WORLD);
     particles_v.resize(count_part_local[prank]);
     MPI_Scatterv(particles_v_local.data(), count_part_local.data(), displs_part_local.data(), MyParticle_mpi_t, particles_v.data(), count_part_local[prank], MyParticle_mpi_t, 0, MPI_COMM_WORLD);
+    auto t1 = clk::now();
+    std::cout<<"prank="<<prank<<"-"<<psize<<": The first creation of the tree took "<<second(t1 - t0).count() << " seconds"<<std::endl;
 
     //std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << count_part_local[prank] <<std::endl;    
     //std::cout<<"prank="<<prank<<"-"<<psize<<": The number of particles is = " << particles_v.size() <<std::endl;
